@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Processador de ponto — Lenarge</title>
+
+<style>
+  :root{
+    --bg:#0b1220;
+    --card:#0f1a2e;
+    --muted:#8aa0c2;
+    --text:#e7eefc;
+    --line:rgba(255,255,255,.10);
+    --blue:#4aa3ff;
+    --blue2:#2b6bff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+    color:var(--text);
+  }
+  header{
+    max-width:1100px;
+    margin:28px auto 10px;
+    padding:0 18px;
+  }
+  
+  /* Cabeçalho e Botão Seletor */
+  .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+  h1{margin:0; font-size:22px; letter-spacing:.2px; transition: 0.3s;}
+  
+  .mode-switch {
+      display: flex;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px;
+  }
+  .mode-switch input[type="radio"] { display: none; }
+  .mode-switch label {
+      padding: 8px 16px; margin: 0; cursor: pointer; border-radius: 6px;
+      font-size: 13px; font-weight: 600; color: var(--muted); transition: 0.2s;
+      user-select: none;
+  }
+  .mode-switch input[type="radio"]:checked + label {
+      background: rgba(74, 163, 255, 0.15);
+      color: var(--blue);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+
+  .sub{color:var(--muted);font-size:13px;line-height:1.35}
+  .wrap{max-width:1100px;margin:10px auto 48px;padding:0 18px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .section{padding:16px 16px 14px;border-top:1px solid var(--line)}
+  .section:first-child{border-top:none}
+  label{display:block;color:var(--muted);font-size:12px;margin:10px 0 6px}
+  textarea{
+    width:100%;
+    min-height:170px;
+    resize:vertical;
+    padding:12px 12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.18);
+    color:var(--text);
+    outline:none;
+    line-height:1.35;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:12.5px;
+  }
+  textarea:focus{border-color:rgba(74,163,255,.55); box-shadow: 0 0 0 3px rgba(74,163,255,.14)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background: rgba(74,163,255,.12);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .btn:hover{transform:translateY(-1px); border-color:rgba(74,163,255,.55)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .secondary{background: rgba(255,255,255,.06)}
+  .danger{background: rgba(255,80,80,.12)}
+  .status{color:var(--muted);font-size:12px;white-space:pre-wrap}
+  .loader{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);
+    border-top-color: var(--blue);
+    animation:spin .75s linear infinite;
+    display:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(74,163,255,.35);
+    background: rgba(74,163,255,.12);
+    font-size:12px;
+    font-weight:700;
+    display:none;
+  }
+  .smallhint{color:var(--muted);font-size:12px;margin-top:6px}
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+  @media(min-width:920px){
+    .grid{grid-template-columns: 1fr 1fr}
+  }
+  .out{padding:0}
+  .person{
+    border-top:1px solid var(--line);
+    padding:14px 16px;
+  }
+  .person:first-child{border-top:none}
+  .person h2{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+  .ref{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .refhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(0,0,0,.16);
+    border-bottom:1px solid var(--line);
+  }
+  .refhead .meta{color:var(--muted);font-size:12px}
+  .weeks{padding:10px 12px}
+  .week{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .week:last-child{margin-bottom:0}
+  .weekhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom:1px solid var(--line);
+  }
+  .weektitle{font-weight:800;font-size:13px}
+  .tbl{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  .tbl th,.tbl td{
+    border-bottom:1px solid rgba(255,255,255,.07);
+    padding:8px 10px;
+    vertical-align:top;
+  }
+  .tbl th{color:var(--muted);font-weight:700;text-align:left;background:rgba(0,0,0,.10)}
+  .tbl tr:last-child td{border-bottom:none}
+  .nowrap{white-space:nowrap}
+  .muted{color:var(--muted)}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+  .event-detail{
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+  .month-header{
+    font-size:13px;
+    font-weight:800;
+    color:var(--blue);
+    padding:10px 12px 4px;
+    letter-spacing:.3px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-content">
+      <div>
+        <h1 id="main-title">Processador de ponto - Lenarge</h1>
+        <div class="sub" id="sub-mode">Essa versão conta com entrada, saída, total de condução e total de espera.</div>
+      </div>
+      <div class="mode-switch">
+        <input type="radio" name="mode" id="modeCE" value="com-espera" checked>
+        <label for="modeCE">Condução + Espera</label>
+        <input type="radio" name="mode" id="modeC" value="conducao">
+        <label for="modeC">Apenas Condução</label>
+      </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="section">
+      <div class="grid">
+        <div>
+          <label style="margin-top:0;">Cole o espelho de ponto aqui:</label>
+          <textarea id="raw" placeholder=""></textarea>
+        
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" id="btnProcess" type="button">Processar texto</button>
+            <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
+            <div class="loader" id="loader"></div>
+            <div class="pill" id="pillReady">Pronto!</div>
+            <div class="status" id="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section out" id="out"></div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const elRaw = $("raw");
+const elStatus = $("status");
+const elLoader = $("loader");
+const elPillReady = $("pillReady");
+const elOut = $("out");
+const btnProcess = $("btnProcess");
+const btnClear = $("btnClear");
+
+function setStatus(msg){ elStatus.textContent = msg || ""; }
+function setLoading(on){
+  elLoader.style.display = on ? "inline-block" : "none";
+  btnProcess.disabled = on;
+}
+function flashReady(){
+  elPillReady.style.display = "inline-block";
+  setTimeout(()=>{ elPillReady.style.display = "none"; }, 2500);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+function normalizeSpaces(s){
+  return (s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").replace(/[\t\f\v]+/g," ").replace(/ +/g," ");
+}
+
+function onlyHHMM(hhmm){
+  const m = /^([0-9]{2}):([0-9]{2})/.exec(hhmm || "");
+  return m ? `${m[1]}:${m[2]}` : "";
+}
+
+function parseBRDate(dmy){
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dmy);
+  if(!m) return null;
+  const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10);
+  return new Date(yy, mm, dd);
+}
+
+function fmtBRDate(dt){
+  const dd = String(dt.getDate()).padStart(2,"0");
+  const mm = String(dt.getMonth()+1).padStart(2,"0");
+  const yy = dt.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function addDays(dt, n){
+  const d = new Date(dt.getTime());
+  d.setDate(d.getDate()+n);
+  return d;
+}
+
+function mondayOf(dt){
+  const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const day = d.getDay(); 
+  const diff = (day === 0 ? -6 : 1 - day); 
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function isNextDay(d1, d2){
+  const a = parseBRDate(d1), b = parseBRDate(d2);
+  if(!a || !b) return false;
+  const diff = Math.round((b - a) / 86400000);
+  return diff === 1;
+}
+
+function toMinutes(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return null;
+  return parseInt(m[1],10)*60 + parseInt(m[2],10);
+}
+
+function add24(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return hhmm;
+  const hh = parseInt(m[1],10) + 24;
+  return `${String(hh).padStart(2,"0")}:${m[2]}`;
+}
+
+function suppressDuplicateTimesInDay(arr){
+  if(!Array.isArray(arr) || arr.length < 2) return arr || [];
+  const out = arr.slice();
+  for(let i=0;i<out.length-1;){
+    if(out[i] && out[i] === out[i+1]){
+      out.splice(i, 2);
+      if(i>0) i--; 
+    }else{
+      i++;
+    }
+  }
+  for(let i=1;i<out.length;){
+    if(out[i] === out[i-1]) out.splice(i,1);
+    else i++;
+  }
+  return out;
+}
+
+function extractEmployeeName(text){
+  const re = /Nome do colaborador\s+(.+?)\s+-\s+\d+/i;
+  const m = re.exec(text);
+  if(m) return m[1].trim();
+  return "FUNCIONÁRIO NÃO IDENTIFICADO";
+}
+
+function extractPeriod(text){
+  // Usa "até" como âncora para ignorar "(UTC-3)" que contém dígitos
+  // Dois-pontos após "relatório" é opcional (alguns espelhos omitem)
+  const re = /Período do relatório:?\s*(\d{2}\/\d{2}\/\d{4}).*?até\s*(\d{2}\/\d{2}\/\d{4})/;
+  const m = re.exec(text);
+  if(m) return { start: m[1], end: m[2] };
+  return null;
+}
+
+function extractDayData(text){
+  // Retorna Map: data → { entry, exit, totalConducao, totalEspera }
+  // Índices no resumo do Início de Viagem (após Hora Inicial):
+  //   times[0] = Hora Inicial (entrada)
+  //   times[1] = Descanso dia Anterior
+  //   times[2] = Total Jornada
+  //   times[3] = Total Condução  ←
+  //   times[4] = Condução Máx Cont
+  //   times[5] = Total Espera    ←
+  const result = new Map();
+  // lastTime: último horário de Hora Final visto por dia (fallback para exit)
+  const lastTimePerDay = new Map();
+  const lines = text.split('\n');
+  let currentDate = null;
+
+  for(let i = 0; i < lines.length; i++){
+    const line = normalizeSpaces(lines[i]).trim();
+    if(!line || line.length < 5) continue;
+
+    let rest = line;
+    let date = currentDate;
+
+    const dateMatch = /^(\d{2}\/\d{2}\/\d{4})\s+(.+)/.exec(line);
+    if(dateMatch){
+      date = dateMatch[1];
+      rest = dateMatch[2];
+      currentDate = date;
+    }
+
+    if(!date) continue;
+
+    // Remover "*" de ajuste manual
+    if(rest.startsWith('* ')) rest = rest.substring(2);
+    else if(rest === '*') continue;
+
+    // ── Rastrear último horário de qualquer evento do dia ──
+    // Formato da linha de evento: Placa Evento [Localização] HoraI [HoraF] [Duração] ...
+    // Usamos todos os tokens HH:MM da linha e pegamos o maior como candidato a saída
+    {
+      const allTimes = rest.match(/\b(\d{1,2}):(\d{2})\b/g);
+      if(allTimes && allTimes.length >= 1){
+        // Hora Final costuma ser o segundo horário da linha; se só houver um, usamos ele
+        const candidate = allTimes.length >= 2 ? allTimes[1] : allTimes[0];
+        const candMin = toMinutes(candidate);
+        const prevMin = toMinutes(lastTimePerDay.get(date) || '');
+        if(candMin !== null && (prevMin === null || candMin > prevMin)){
+          lastTimePerDay.set(date, candidate);
+        }
+      }
+    }
+
+    const isInicio = rest.indexOf('Início de Viagem') !== -1;
+    const isFim    = rest.indexOf('Fim de Viagem')    !== -1;
+    if(!isInicio && !isFim) continue;
+
+    const eventName = isInicio ? 'Início de Viagem' : 'Fim de Viagem';
+    const eIdx = rest.indexOf(eventName);
+    if(eIdx === -1) continue;
+    const possiblePlate = rest.substring(0, eIdx).trim();
+    if(!possiblePlate || possiblePlate.includes(' ')) continue;
+
+    rest = rest.substring(eIdx + eventName.length).trim();
+
+    // Converter overflow de 24h: "02:05+1d" → "26:05"
+    rest = rest.replace(/(\d{1,2}):(\d{2})\+1d/g, (_, h, m) =>
+      String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m
+    );
+
+    if(!result.has(date)){
+      result.set(date, { entry: '', exit: '', totalConducao: '', totalEspera: '' });
+    }
+    const day = result.get(date);
+
+    // Capturar todos os valores de tempo (inclui horas > 24 como 26:MM, 48:MM)
+    const times = rest.match(/\d{1,3}:\d{2}/g) || [];
+
+    if(isInicio && !day.entry){
+      day.entry         = times[0] || '';
+      day.totalConducao = times[3] || '';
+      day.totalEspera   = times[5] || '';
+    }
+    if(isFim && !day.exit){
+      day.exit = times[0] || '';
+      // Se saída < entrada em minutos, a viagem cruzou meia-noite → +24h
+      if(day.entry && day.exit){
+        const entMin = toMinutes(day.entry);
+        const extMin = toMinutes(day.exit);
+        if(entMin !== null && extMin !== null && extMin < entMin){
+          const [h, m] = day.exit.split(':');
+          day.exit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
+        }
+      }
+    }
+  }
+
+  // Dias com entrada mas sem Fim de Viagem → usar último horário registrado
+  for(const [date, day] of result.entries()){
+    if(day.entry && !day.exit){
+      const last = lastTimePerDay.get(date) || '';
+      if(last){
+        day.exit = last;
+        // Corrigir cruzamento de meia-noite também no fallback
+        const entMin = toMinutes(day.entry);
+        const extMin = toMinutes(day.exit);
+        if(entMin !== null && extMin !== null && extMin < entMin){
+          const [h, m] = day.exit.split(':');
+          day.exit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+// ==========================================
+// MOTOR: ENTRADA / SAÍDA / CONDUÇÃO / ESPERA
+// ==========================================
+function buildDataModelV2(rawText, period){
+  const text = normalizeSpaces(rawText).replace(/\n\s+\n/g,"\n\n");
+  const name = extractEmployeeName(text);
+
+  if(!period){
+    setStatus("Aviso: período não encontrado no texto");
+    period = { start: "??/??/????", end: "??/??/????" };
+  }
+
+  const refKey = period.end ? (() => {
+    const endDt = parseBRDate(period.end);
+    if(endDt) return `${String(endDt.getMonth()+1).padStart(2,"0")}/${endDt.getFullYear()}`;
+    return "??/????";
+  })() : "??/????";
+
+  const dayData = extractDayData(text);
+
+  if(dayData.size === 0){
+    return [{ name, refs: [] }];
+  }
+
+  // Cada dia → [entrada, saída, totalConducao, totalEspera]
+  const days = new Map();
+  for(const [date, d] of dayData.entries()){
+    days.set(date, [d.entry, d.exit, d.totalConducao, d.totalEspera]);
+  }
+
+  // Estender período de exibição até a última data com dados,
+  // caso existam registros além do period.end declarado
+  let displayEnd = period.end;
+  if(days.size > 0){
+    const declaredEnd = parseBRDate(period.end);
+    for(const dateStr of days.keys()){
+      const dt = parseBRDate(dateStr);
+      if(dt && declaredEnd && dt > declaredEnd){
+        displayEnd = dateStr;
+      }
+    }
+  }
+
+  return [{
+    name,
+    refs: [{
+      refKey,
+      periodStart: period.start,
+      periodEnd:   displayEnd,
+      days
+    }]
+  }];
+}
+// ==========================================
+// RENDERIZAÇÃO E TABELAS
+// ==========================================
+function buildMonthWeeks(periodStart, periodEnd){
+  const start = parseBRDate(periodStart);
+  const end = parseBRDate(periodEnd);
+  if(!start || !end) return [];
+  const all = [];
+  for(let d = new Date(start.getTime()); d <= end; d = addDays(d,1)){
+    all.push(new Date(d.getTime()));
+  }
+  if(!all.length) return [];
+
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const monthGroups = [];
+  let curMonth = null;
+  let curWeek = null;
+  for(const d of all){
+    const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+    const isNewMonth = !curMonth || curMonth.key !== mKey;
+    const isMonday = d.getDay() === 1;
+    if(isNewMonth){
+      curWeek = { days: [] };
+      curMonth = {
+        key: mKey,
+        label: `${MESES[d.getMonth()]} ${d.getFullYear()}`,
+        weeks: [curWeek]
+      };
+      monthGroups.push(curMonth);
+    } else if(isMonday){
+      curWeek = { days: [] };
+      curMonth.weeks.push(curWeek);
+    }
+    curWeek.days.push(d);
+  }
+
+  return monthGroups;
+}
+
+function fmtExcelTime(hhmm){
+  return (hhmm||"");
+}
+
+function getMode(){
+  return document.querySelector('input[name="mode"]:checked')?.value || 'com-espera';
+}
+
+function toTSVForWeek(weekDays, inRangeFn, dayToData, weekLabel, numCols){
+  numCols = numCols || 4;
+  const lines = [];
+  if(weekLabel) lines.push(["Semana", weekLabel].join("\t"));
+  for(const d of weekDays){
+    if(!inRangeFn(d)) continue;
+    const k = fmtBRDate(d);
+    const row = (dayToData.get(k) || ["", "", "", ""]).slice(0, numCols);
+    lines.push(row.map(v => v || "").join("\t"));
+  }
+  return lines.join("\n");
+}
+
+function render(model){
+  elOut.innerHTML = "";
+  if(!model.length || !model[0].refs.length){
+    elOut.innerHTML = `<div class="section"><div class="muted">Nenhum registro de Início/Fim de Viagem encontrado. Verifique se o texto contém 'Início de Viagem' e 'Fim de Viagem'.</div></div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  for(const person of model){
+    const wrap = document.createElement("div");
+    wrap.className = "person";
+    wrap.innerHTML = `<h2>${escapeHtml(person.name)}</h2>`;
+
+    for(const ref of person.refs){
+      const refBox = document.createElement("div");
+      refBox.className = "ref";
+
+      const monthWeeks = buildMonthWeeks(ref.periodStart, ref.periodEnd);
+      const start = parseBRDate(ref.periodStart);
+      const end = parseBRDate(ref.periodEnd);
+      const inRangeFn = (d)=> (start && end && d>=start && d<=end);
+
+      const refHead = document.createElement("div");
+      refHead.className = "refhead";
+      refHead.innerHTML = `
+        <div>
+          
+          <div class="meta">Período: ${escapeHtml(ref.periodStart)} → ${escapeHtml(ref.periodEnd)}</div>
+        </div>
+        <div class="meta">Meses: ${monthWeeks.length}</div>
+      `;
+      refBox.appendChild(refHead);
+
+      const weeksWrap = document.createElement("div");
+      weeksWrap.className = "weeks";
+
+      // Modo define as colunas exibidas e copiadas
+      const mode = getMode();
+      const COLS = mode === 'com-espera'
+        ? ['Entrada', 'Saída', 'Total Condução', 'Total Espera']
+        : ['Entrada', 'Saída', 'Total Condução'];
+      const numCols = COLS.length;
+
+      for(const monthData of monthWeeks){
+        const monthHeader = document.createElement("div");
+        monthHeader.className = "month-header";
+        monthHeader.textContent = monthData.label;
+        weeksWrap.appendChild(monthHeader);
+
+        for(const w of monthData.weeks){
+          const visDays = w.days.filter(inRangeFn);
+          if(!visDays.length) continue;
+
+          const wk = document.createElement("div");
+          wk.className = "week";
+
+          const vStart = visDays[0];
+          const vEnd = visDays[visDays.length-1];
+          const title = `${fmtBRDate(vStart)} a ${fmtBRDate(vEnd)}`;
+
+          const tsvCopy = toTSVForWeek(visDays, ()=>true, ref.days, null, numCols);
+
+          const head = document.createElement("div");
+          head.className = "weekhead";
+          head.innerHTML = `
+            <div class="weektitle">${escapeHtml(title)}</div>
+            <button class="btn secondary" type="button">Copiar semana</button>
+          `;
+          const btn = head.querySelector("button");
+          btn.addEventListener("click", async ()=>{
+            await copyToClipboard(tsvCopy);
+            const old = btn.textContent;
+            btn.textContent = "Copiado";
+            btn.disabled = true;
+            window.setTimeout(()=>{
+              btn.textContent = old;
+              btn.disabled = false;
+            }, 2500);
+          });
+
+          const table = document.createElement("table");
+          table.className = "tbl";
+
+          const thead = document.createElement("thead");
+          const headerRow = document.createElement("tr");
+          for(const col of COLS){
+            const th = document.createElement("th");
+            th.textContent = col;
+            headerRow.appendChild(th);
+          }
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+
+          for(const d of visDays){ 
+            const dk = fmtBRDate(d);
+            const row = (ref.days.get(dk) || ["", "", "", ""]);
+
+            const tr = document.createElement("tr");
+            for(let i = 0; i < numCols; i++){
+              const td = document.createElement("td");
+              td.className = "mono";
+              td.textContent = row[i] || "";
+              tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+          }
+          table.appendChild(tbody);
+
+          wk.appendChild(head);
+          wk.appendChild(table);
+          weeksWrap.appendChild(wk);
+        }
+      }
+
+      refBox.appendChild(weeksWrap);
+      wrap.appendChild(refBox);
+    }
+
+    frag.appendChild(wrap);
+  }
+
+  elOut.appendChild(frag);
+}
+
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+async function copyToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+}
+
+function simulateProgress(msTotal=900){
+  let pct = 0;
+  const start = performance.now();
+  return new Promise(resolve=>{
+    function tick(){
+      const t = performance.now() - start;
+      pct = Math.min(99, Math.floor((t/msTotal)*100));
+      setStatus(`Carregando... ${pct}%`);
+      if(t >= msTotal) return resolve();
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+btnProcess.addEventListener("click", async ()=>{
+  const raw = (elRaw.value||"").trim();
+  if(!raw){
+    setStatus("Cole o texto copiado do PDF de rastreamento antes de processar.");
+    return;
+  }
+
+  setLoading(true);
+  elOut.innerHTML = "";
+  setStatus("Carregando... 0%");
+
+  await simulateProgress(800);
+
+  let model = [];
+  
+  try{
+    const period = extractPeriod(raw);
+    model = buildDataModelV2(raw, period);
+  }catch(err){
+    console.error(err);
+    setStatus("Não consegui interpretar o texto. Verifique se o formato contém 'Período do relatório' e linhas com 'Início de Viagem' / 'Fim de Viagem'.");
+    setLoading(false);
+    return;
+  }
+
+  setStatus("Carregando... 100%");
+  render(model);
+  setLoading(false);
+  flashReady();
+  setStatus();
+});
+
+btnClear.addEventListener("click", ()=>{
+  elRaw.value = "";
+  elOut.innerHTML = "";
+  setStatus("");
+});
+
+document.querySelectorAll('input[name="mode"]').forEach(r => {
+  r.addEventListener("change", () => {
+    const sub = document.getElementById("sub-mode");
+    if(sub){
+      sub.textContent = r.value === "com-espera"
+        ? "Condução + Espera"
+        : "Apenas Condução";
+    }
+    // Re-renderizar se já houver resultado
+    if(elOut.innerHTML.trim()) btnProcess.click();
+  });
+});
+
+</script>
+</body>
+</html>

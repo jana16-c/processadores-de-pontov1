@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Ajuste de Turno Noturno (Corrigido)</title>
+    <style>
+        body {
+            font-family: "Courier New", monospace;
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+        .result {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .info { color: #9cdcfe; }
+        h1, h2 { color: #4ec9b0; }
+        pre { overflow-x: auto; background: #1e1e1e; padding: 10px; border-left: 3px solid #404040; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #404040; padding: 8px; text-align: left; }
+        th { background: #2d2d2d; color: #4ec9b0; }
+        tr:nth-child(even) { background: #262626; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste: Ajuste de Turno Noturno (Lógica Corrigida)</h1>
+    
+    <div class="result">
+        <h2>Cenário: Múltiplos Dias com Turnos Noturnos</h2>
+        <p><strong>Turno Planejado:</strong> 22:40 - 06:50 (Noturno)</p>
+        <p><strong>Regra:</strong> Madrugadas do dia N pertencem ao turno que começou no dia N-1</p>
+    </div>
+
+    <h2 class="info">Verificando o fluxo...</h2>
+    <div id="output" class="result">
+        <p>Carregando módulos...</p>
+    </div>
+
+    <script type="module">
+        import { toMin, add24ToTime } from './src/utilitários/time.js';
+        import { isNextCalendarDay } from './src/utilitários/date.js';
+
+        // Função corrigida (inversa)
+        function isNightShift(plannedStart, plannedEnd) {
+            if (!plannedStart || !plannedEnd) return false;
+            const startMin = toMin(plannedStart);
+            const endMin = toMin(plannedEnd);
+            return startMin > endMin;
+        }
+
+        function procesNightShiftTimes(timeline) {
+            // Itera a partir do segundo dia
+            for (let i = 1; i < timeline.length; i++) {
+                const yesterday = timeline[i - 1];
+                const today = timeline[i];
+
+                // Verifica se o dia anterior teve turno noturno
+                const yesterdayIsNight = isNightShift(yesterday.plannedStart, yesterday.plannedEnd);
+                if (!yesterdayIsNight || yesterday.isOffDay) continue;
+
+                // Verifica se os dias são consecutivos
+                if (!isNextCalendarDay(yesterday.data, today.data)) continue;
+
+                // Separa as batidas de hoje em madrugada (< 12h) e resto
+                const morningTimes = [];   // Madrugadas que fecham turno de ontem
+                const otherTimes = [];     // Resto (noturnas de hoje)
+
+                for (const time of (today.times || [])) {
+                    const timeMin = toMin(time);
+                    const hourOfDay = Math.floor(timeMin / 60);
+
+                    // Se horário é de madrugada (< 12h), pertence a ontem
+                    if (hourOfDay < 12) {
+                        morningTimes.push(time);
+                    } else {
+                        otherTimes.push(time);
+                    }
+                }
+
+                // Move as madrugadas para o dia anterior com +24h
+                if (morningTimes.length > 0) {
+                    // Adiciona madrugadas ao dia anterior
+                    const movedTimes = morningTimes.map(t => add24ToTime(t));
+                    yesterday.times = [...(yesterday.times || []), ...movedTimes];
+                    yesterday.times.sort((a, b) => toMin(a) - toMin(b));
+                    
+                    // Remove as madrugadas do dia hoje
+                    today.times = otherTimes;
+                }
+            }
+
+            return timeline;
+        }
+
+        // Setup dos dados (conforme o exemplo do usuário)
+        const timeline = [
+            {
+                data: new Date(2018, 3, 9),  // 09/04/2018 (Seg)
+                times: ["22:36"],
+                isOffDay: false,
+                rawLine: "09 Seg REV015A 22:40 06:50 22:36",
+                plannedStart: "22:40",
+                plannedEnd: "06:50"
+            },
+            {
+                data: new Date(2018, 3, 10), // 10/04/2018 (Ter)
+                times: ["02:58", "03:59", "06:52", "22:35"],
+                isOffDay: false,
+                rawLine: "10 Ter REV015A 22:40 06:50 02:58 03:59 06:52 22:35",
+                plannedStart: "22:40",
+                plannedEnd: "06:50"
+            },
+            {
+                data: new Date(2018, 3, 11), // 11/04/2018 (Qua)
+                times: ["02:57", "03:58", "06:45", "22:36"],
+                isOffDay: false,
+                rawLine: "11 Qua REV015A 22:40 06:50 02:57 03:58 06:45 22:36",
+                plannedStart: "22:40",
+                plannedEnd: "06:50"
+            },
+            {
+                data: new Date(2018, 3, 12), // 12/04/2018 (Qui)
+                times: ["03:56", "05:40", "06:45"],
+                isOffDay: false,
+                rawLine: "12 Qui REV015A DSR 03:56 05:40 06:45",
+                plannedStart: null,
+                plannedEnd: null
+            }
+        ];
+
+        let output = '<h3>ANTES DA CONVERSÃO:</h3>';
+        output += '<table><tr><th>Data</th><th>Batidas</th><th>Turno</th></tr>';
+        timeline.forEach((day, idx) => {
+            const dataStr = day.data.toLocaleDateString('pt-BR');
+            const turno = day.plannedStart ? `${day.plannedStart} - ${day.plannedEnd}` : 'N/A';
+            output += `<tr><td>${dataStr}</td><td>${day.times.join(", ")}</td><td>${turno}</td></tr>`;
+        });
+        output += '</table>';
+
+        // Execute o processamento
+        procesNightShiftTimes(timeline);
+
+        output += '<h3>DEPOIS DA CONVERSÃO:</h3>';
+        output += '<table><tr><th>Data</th><th>Batidas</th><th>Análise</th></tr>';
+        timeline.forEach((day, idx) => {
+            const dataStr = day.data.toLocaleDateString('pt-BR');
+            const diasemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'][day.data.getDay()];
+            
+            let analise = '';
+            if (day.times.length === 0) {
+                analise = '(sem batidas)';
+            } else {
+                const hasExtended = day.times.some(t => toMin(t) >= 24*60);
+                if (hasExtended) {
+                    analise = '✓ Contém horários +24h';
+                }
+            }
+            
+            output += `<tr><td>${dataStr} (${diasemana})</td><td><strong>${day.times.join(", ")}</strong></td><td>${analise}</td></tr>`;
+        });
+        output += '</table>';
+
+        // Validação
+        output += '<h3>VALIDAÇÃO ESPERADA:</h3>';
+        output += '<pre>';
+
+        const dia09 = timeline[0];
+        const dia10 = timeline[1];
+        const dia11 = timeline[2];
+
+        const expDia09 = ['22:36', '26:58', '27:59', '30:52'];
+        const expDia10 = ['22:35', '26:57', '27:58', '30:45'];
+
+        let pass = true;
+
+        // Dia 09
+        if (JSON.stringify(dia09.times) === JSON.stringify(expDia09)) {
+            output += '✓ <span class="success">Dia 09 CORRETO: ' + dia09.times.join(", ") + '</span>\n';
+        } else {
+            output += '✗ <span class="error">Dia 09 INCORRETO</span>\n';
+            output += '  Esperado: ' + expDia09.join(", ") + '\n';
+            output += '  Obtido:   ' + dia09.times.join(", ") + '\n';
+            pass = false;
+        }
+
+        // Dia 10
+        if (JSON.stringify(dia10.times) === JSON.stringify(expDia10)) {
+            output += '✓ <span class="success">Dia 10 CORRETO: ' + dia10.times.join(", ") + '</span>\n';
+        } else {
+            output += '✗ <span class="error">Dia 10 INCORRETO</span>\n';
+            output += '  Esperado: ' + expDia10.join(", ") + '\n';
+            output += '  Obtido:   ' + dia10.times.join(", ") + '\n';
+            pass = false;
+        }
+
+        output += '\n' + (pass ? '🎉 TODOS OS TESTES PASSARAM!' : '❌ Alguns testes falharam');
+        output += '</pre>';
+
+        document.getElementById('output').innerHTML = output;
+    </script>
+</body>
+</html>

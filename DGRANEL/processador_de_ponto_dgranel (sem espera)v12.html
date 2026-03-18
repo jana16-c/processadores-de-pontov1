@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Processador de ponto - D'Granel (v12)</title>
+<script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=-zrJrqUTXuFXuphCK5unYJ5Ii8FAbm0vHdEa0pt55ThrSA2mZXq2fsyTFZdG8Oz7D5PprczgRXqJOPVuCoNjRN4cyz9Ev6r0p2crk-Rd4rj3QrwNEgOnmcd4VNP8gRAL2N5IwU6lT9tMH8Tzvan7qsYrQ5io2l6x0Bhm3tDMsAfgeqtEQZPEtr2OGt9Ytpa6eFBDtkjFV99rqEapAjZPQX5VLEdrvl0SnVOgugsqEkKtK6tkqlMA1gbvZWRFa8itaaEDE6P3rrwexZtwG76tWxSky2WP3Y822UAZ-86ombQsAShq6oVX0IgmbE4Mw0GNxAoi6MBuZ_AsJnBX_9_q15Csv1ho41-pB80_hTX6Oio4JJzTO6I3-ZbWDEX-7d8Ey96B_v2qV8Iz1Ct826LSWGiLjAhf29KIYSIRRq2oH81xOVQTa8qUC5UpDlv8R84PEydRIu4G9gjK7A1QO_7DffIoRWxCRfdr5jPXB-g5AWa5rd4G8asb-0CZ0xXiAnuZAXzjW4VIrEXoV0pMuyxhyO0Sh5kc15tx1M2aXIMQmQuKUjo0S2iyxMNe2jxDG-k9OK7PjybR3MrZJjbhTNM1wweAeHezHzxR2YFBh9KAtYLYbs6FFkz1rrHbknOHUwGz-EKdExn9-VFwxY0vbSaUGuX8QI9iW4kuJOLMQIEd5w-9qYVg_f1nespmN9mC9nWvsBJ46iDujfpcQi7ijlylRHxFh3t3dxnBVSyNatqtS4yXo-soTQ71e-J4jC115VrKu07MMwqS_8aluSHJiLYmgrJFRG9sgXN0KXdsoVszCmtp3S-ldDkVAn864CBDvN-RKIDD8e7MQ02rh1Y7aM2miwrPEfeGqn5rKBIoNDHNqywkA7tp7oTZaPHlGd3WcZUMZ1cq9iI5zDVitLIWkoLymnaG3wC7ZlyxjDrzFOYe0yd-goOnveP9q8U33BN39WpKCJDQNsburaIb3SS6KwSxrsdTlDOxz6cFznX4PF8MqNwlQSa9XxOy98iXQWzSsdD_U2AIB2WRIwF8mowk8hCNSY7mRzRc8OxGCNmWJkT5TnM3pq2KjFzLzFeiA97nFGDBSTU8Mw5IIZ4nMvRIKHSRPt3BRtEAKFDUYfrlUsGhM_Cwdn_ohJuLA_SYNPndC-KqNl-O4f0G_LwzYq4lHR4qa70c9y1n0gi0XmWTcFOzrNbVKXUF4LfaEhiQG_RWF2ahC770QRLu6eKQ6TPrpg2HcsVDsFzkI8yw0hKBLvsT_7Dp4HBtzHtBOeOZhJd-YHHyqVcYBXLA5x9D3ecxBJnyIlya0cdrxnIomK_5LQQV9fTNB5ava28OUO_jBZXgC_O1KUkBmjbs377Edy5NbujKKkr-AaN0ns9qfcaglFueo_x10B0FDciyr8T1C101ClCve5YfIQO1MpKrUtVq2idmZjgBpdvriL1jsaqeEoKOUnwY34AxQsH6fSIeeLjCi2NlgGbdADCvJvlHpG-KBUzdAraQR2h22Am0DgW9PVVk_mJS7rc6DO5H2XcTJ75TQXIS_TjiPTDmSGB7C5zjC8NVnPrdYwEojnHTVtxnRD7yNnVTVlYVZFjOs0qiDjCjrFOqI1jo18lecRdPzR5WqE171I95_tnvq98Ry77Cnst92k7mV-40VqGynrkdpNcb8uo4ENcA9mql7F8Cs9jAobOEvw" nonce="6e2937e931f6198760203c4f3a81bb0a" charset="UTF-8"></script><style>
+  :root{
+    --bg:#0b1220;
+    --card:#0f1a2e;
+    --muted:#8aa0c2;
+    --text:#e7eefc;
+    --line:rgba(255,255,255,.10);
+    --blue:#4aa3ff;
+    --blue2:#2b6bff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+    color:var(--text);
+  }
+  header{
+    max-width:1100px;
+    margin:28px auto 10px;
+    padding:0 18px;
+  }
+  h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px;line-height:1.35}
+  .wrap{max-width:1100px;margin:10px auto 48px;padding:0 18px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .section{padding:16px 16px 14px;border-top:1px solid var(--line)}
+  .section:first-child{border-top:none}
+  label{display:block;color:var(--muted);font-size:12px;margin:10px 0 6px}
+  textarea{
+    width:100%;
+    min-height:170px;
+    resize:vertical;
+    padding:12px 12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.18);
+    color:var(--text);
+    outline:none;
+    line-height:1.35;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:12.5px;
+  }
+  textarea:focus{border-color:rgba(74,163,255,.55); box-shadow: 0 0 0 3px rgba(74,163,255,.14)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background: rgba(74,163,255,.12);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .btn:hover{transform:translateY(-1px); border-color:rgba(74,163,255,.55)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .secondary{background: rgba(255,255,255,.06)}
+  .danger{background: rgba(255,80,80,.12)}
+  .status{color:var(--muted);font-size:12px;white-space:pre-wrap}
+  .loader{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);
+    border-top-color: var(--blue);
+    animation:spin .75s linear infinite;
+    display:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(74,163,255,.35);
+    background: rgba(74,163,255,.12);
+    font-size:12px;
+    font-weight:700;
+    display:none;
+  }
+  .smallhint{color:var(--muted);font-size:12px;margin-top:6px}
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+  @media(min-width:920px){
+    .grid{grid-template-columns: 1fr 1fr}
+  }
+  .out{padding:0}
+  .person{
+    border-top:1px solid var(--line);
+    padding:14px 16px;
+  }
+  .person:first-child{border-top:none}
+  .person h2{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+  .ref{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .refhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(0,0,0,.16);
+    border-bottom:1px solid var(--line);
+  }
+  .refhead .meta{color:var(--muted);font-size:12px}
+  .weeks{padding:10px 12px}
+  .week{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .week:last-child{margin-bottom:0}
+  .weekhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom:1px solid var(--line);
+  }
+  .weektitle{font-weight:800;font-size:13px}
+  .tbl{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  .tbl th,.tbl td{
+    border-bottom:1px solid rgba(255,255,255,.07);
+    padding:8px 10px;
+    vertical-align:top;
+  }
+  .tbl th{color:var(--muted);font-weight:700;text-align:left;background:rgba(0,0,0,.10)}
+  .tbl tr:last-child td{border-bottom:none}
+  .nowrap{white-space:nowrap}
+  .muted{color:var(--muted)}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+  input[type="file"]{
+    width:100%;
+    padding:10px;
+    border-radius:12px;
+    border:1px dashed rgba(255,255,255,.22);
+    background: rgba(0,0,0,.12);
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Processador de ponto (sem espera na jornada) - D'Granel </h1>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="section">
+      <div class="grid">
+        <div>
+          <label>Upload de TXT (opcional)</label>
+          <input type="file" id="txtFile" accept=".txt,text/plain" />
+<label style="margin-top:12px;">Cole aqui o texto copiado do PDF</label>
+          <textarea id="raw" placeholder="Cole o texto completo do relatório aqui..."></textarea>
+        </div>
+
+        <div>
+<div class="row" style="margin-top:12px;">
+            <button class="btn" id="btnProcess" type="button">Processar texto</button>
+            <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
+            <div class="loader" id="loader"></div>
+            <div class="pill" id="pillReady">Pronto!</div>
+            <div class="status" id="status"></div>
+          </div>
+</div>
+      </div>
+    </div>
+
+    <div class="section out" id="out"></div>
+  </section>
+</div>
+
+<script>
+/*
+Processador de ponto (sem espera na jornada) — D'Granel
+-----------------------------------
+Mudança solicitada: entrada por TEXTO colado do PDF ou upload de .TXT.
+
+Heurísticas/regex principais (baseadas no modelo anexado):
+1) Nome:
+   - "Funcionário / Motorista: ARNALDO DE PAULA DOS SANTOS 9 95887277"
+   Regex: /Funcion[aá]rio\s*\/\s*Motorista:\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ ]+?)\s+\d/
+   Limitação: se o PDF vier com nome quebrado em várias linhas ou com minúsculas, pode exigir ajuste.
+
+2) Período (fechamento):
+   - "Período: 01/08/2020 00:00:00 à 20/08/2020 23:59:59"
+   Regex global: /Período:\s*(dd\/mm\/aaaa) ... à (dd\/mm\/aaaa) .../
+   Fechamento = mês do SEGUNDO date (o "à ..."), como você descreveu.
+
+3) Batidas:
+   - Considera batida quando aparecer:
+     "Função: Jornada de Trabalho Macro Mensagem: INICIO DE JORNADA"
+   E usa o par Data/Hora Início + Data/Hora Final daquela mesma linha/registro.
+   Ignora "Descanso", "Espera", "Refeição" (não geram batida).
+   Observação: o texto do relatório já traz Início e Final no mesmo registro, então o pareamento é direto.
+
+4) Fim de jornada:
+   - Seu enunciado diz “a jornada termina quando tem Interjornada ou Pernoite”.
+     Na prática do relatório, a linha de "Jornada de Trabalho" já contém o final (Data/Hora Final),
+     e as linhas de "Interjornada/Pernoite" aparecem como registros à parte.
+     Aqui, nós simplesmente NÃO usamos essas linhas como batida (porque não são Jornada),
+     mas elas continuam no texto (não atrapalham).
+
+5) Virada noturna (turno noturno):
+   - Se "Jornada de Trabalho" começa em um dia e termina no dia seguinte,
+     e a hora final (minutos do dia) fica MENOR que a hora inicial,
+     então transformamos a saída em 24h + horaFinal (ex.: 02:10 -> 26:10),
+     e atribuímos a batida ao dia inicial.
+
+Limitações relevantes:
+- Se o texto vier muito “poluído” (quebras/colunas diferentes), o regex do registro pode falhar.
+- Não fazemos OCR aqui; é só texto (copiado do PDF ou .txt).
+- Se o relatório tiver múltiplos formatos de "Função:" ou mensagens diferentes, pode precisar ampliar os padrões.
+*/
+
+const $ = (id) => document.getElementById(id);
+
+const elRaw = $("raw");
+const elTxtFile = $("txtFile");
+const elStatus = $("status");
+const elLoader = $("loader");
+const elPillReady = $("pillReady");
+const elOut = $("out");
+const btnProcess = $("btnProcess");
+const btnClear = $("btnClear");
+
+function setStatus(msg){ elStatus.textContent = msg || ""; }
+function setLoading(on){
+  elLoader.style.display = on ? "inline-block" : "none";
+  btnProcess.disabled = on;
+}
+function flashReady(){
+  elPillReady.style.display = "inline-block";
+  setTimeout(()=>{ elPillReady.style.display = "none"; }, 2500);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+function normalizeSpaces(s){
+  return (s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").replace(/[\t\f\v]+/g," ").replace(/ +/g," ");
+}
+
+function onlyHHMM(hhmmss){
+  // "06:10:49" -> "06:10"
+  const m = /^([0-9]{2}):([0-9]{2})/.exec(hhmmss || "");
+  return m ? `${m[1]}:${m[2]}` : "";
+}
+
+function parseBRDate(dmy){
+  // dd/mm/yyyy -> Date (local)
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dmy);
+  if(!m) return null;
+  const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10);
+  return new Date(yy, mm, dd);
+}
+
+function fmtBRDate(dt){
+  const dd = String(dt.getDate()).padStart(2,"0");
+  const mm = String(dt.getMonth()+1).padStart(2,"0");
+  const yy = dt.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function addDays(dt, n){
+  const d = new Date(dt.getTime());
+  d.setDate(d.getDate()+n);
+  return d;
+}
+
+function dayKey(dt){ return fmtBRDate(dt); }
+
+function dowPT(dt){
+  const d = dt.getDay(); // 0 dom
+  return ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d];
+}
+
+function mondayOf(dt){
+  const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const day = d.getDay(); // 0=Dom,1=Seg...
+  const diff = (day === 0 ? -6 : 1 - day); // voltar até segunda
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function isNextDay(d1, d2){
+  const a = parseBRDate(d1), b = parseBRDate(d2);
+  if(!a || !b) return false;
+  const diff = Math.round((b - a) / 86400000);
+  return diff === 1;
+}
+
+function toMinutes(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return null;
+  return parseInt(m[1],10)*60 + parseInt(m[2],10);
+}
+
+function add24(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return hhmm;
+  const hh = parseInt(m[1],10) + 24;
+  return `${String(hh).padStart(2,"0")}:${m[2]}`;
+}
+
+
+function suppressDuplicateTimesInDay(arr){
+  // Remove horários duplicados ADJACENTES no mesmo dia.
+  // Caso clássico: 06:14 12:24 12:24 18:31  -> 06:14 18:31
+  // Regra: se dois horários consecutivos são iguais, removemos o par inteiro.
+  if(!Array.isArray(arr) || arr.length < 2) return arr || [];
+  const out = arr.slice();
+  for(let i=0;i<out.length-1;){
+    if(out[i] && out[i] === out[i+1]){
+      out.splice(i, 2);
+      if(i>0) i--; // reavaliar vizinhança
+    }else{
+      i++;
+    }
+  }
+  // Segurança: colapsa duplicatas restantes adjacentes (se sobrar)
+  for(let i=1;i<out.length;){
+    if(out[i] === out[i-1]) out.splice(i,1);
+    else i++;
+  }
+  return out;
+}
+
+
+function splitByPeriods(text){
+  // retorna [{periodStart, periodEnd, slice}]
+  const re = /Período:\s*(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}:\d{2}\s+à\s+(\d{2}\/\d{2}\/\d{4})\s+\d{2}:\d{2}:\d{2}/g;
+  const matches = [];
+  let m;
+  while((m = re.exec(text)) !== null){
+    matches.push({ idx: m.index, start: m[1], end: m[2] });
+  }
+  const sections = [];
+  for(let i=0;i<matches.length;i++){
+    const a = matches[i];
+    const b = matches[i+1];
+    const slice = text.slice(a.idx, b ? b.idx : text.length);
+    sections.push({ periodStart: a.start, periodEnd: a.end, slice });
+  }
+  return sections;
+}
+
+function extractEmployeeName(slice){
+  // tenta achar o primeiro "Funcionário / Motorista:" após o período
+  const re = /Funcion[aá]rio\s*\/\s*Motorista:\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ ]+?)\s+\d/;
+  const m = re.exec(slice);
+  if(m) return m[1].trim().replace(/\s+/g," ");
+  return "FUNCIONÁRIO NÃO IDENTIFICADO";
+}
+
+function extractJourneys(slice, periodStart, periodEnd){
+  /*
+    Heurística (mais robusta que um regex gigante):
+    - Procuramos cada ocorrência de "Função: ... Macro Mensagem: ..."
+    - Para cada uma, olhamos uma janela "para trás" (ex.: 1200 chars) e pegamos os 2 ÚLTIMOS pares
+      (dd/mm/aaaa + hh:mm:ss) antes do "Função:".
+    - Interpretação:
+        start = penúltimo par
+        end   = último par
+
+    Ajuste importante (v12/v14+):
+    - Muitos relatórios trazem datas/horas de rodapé/cabeçalho (assinaturas, paginação, etc.) perto do "Função:".
+      Isso fazia o parser "pegar" o par de data/hora errado e, por consequência, ignorar dias inteiros.
+    - Agora filtramos os pares dd/mm/yyyy hh:mm:ss para ficar (preferencialmente) dentro do intervalo do "Período"
+      (com uma folga de ±2 dias). Se não houver pares suficientes no intervalo, caímos no comportamento antigo.
+
+    Limitações:
+    - Se o relatório vier sem os 2 pares (data/hora) antes do "Função:", o registro pode ser ignorado.
+  */
+  const out = [];
+  const funcRe = /Função:\s*([^\n\r]+?)\s+Macro\s+Mensagem:\s*([^\n\r]+)/g;
+
+  const pStart = parseBRDate(periodStart);
+  const pEnd = parseBRDate(periodEnd);
+  const rangeStart = pStart ? addDays(pStart, -2) : null;
+  const rangeEnd = pEnd ? addDays(pEnd, 2) : null;
+
+  let m;
+  while((m = funcRe.exec(slice)) !== null){
+    const func = (m[1]||"").trim();
+    const msg  = (m[2]||"").trim();
+
+    const idx = m.index;
+    const back = slice.slice(Math.max(0, idx - 1200), idx);
+
+    const dtRe = /(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})/g;
+    const pairs = [];
+    let d;
+    while((d = dtRe.exec(back)) !== null){
+      pairs.push({ date: d[1], time: d[2] });
+    }
+    if(pairs.length < 2) continue;
+
+    let usePairs = pairs;
+    if(rangeStart && rangeEnd){
+      const filtered = pairs.filter(p=>{
+        const dt = parseBRDate(p.date);
+        return dt && dt >= rangeStart && dt <= rangeEnd;
+      });
+      if(filtered.length >= 2) usePairs = filtered;
+    }
+
+    const start = usePairs[usePairs.length - 2];
+    const end   = usePairs[usePairs.length - 1];
+
+    out.push({
+      startDate: start.date,
+      startTime: start.time,
+      endDate: end.date,
+      endTime: end.time,
+      func, msg
+    });
+  }
+  return out;
+}
+
+function buildDataModel(rawText){
+  const text = normalizeSpaces(rawText).replace(/\n\s+\n/g,"\n\n");
+  const sections = splitByPeriods(text);
+
+  // estrutura: persons[name][refKey] => { periodStart, periodEnd, days: Map(dateStr => [times]) }
+  const persons = new Map();
+
+  for(const sec of sections){
+    const name = extractEmployeeName(sec.slice);
+
+    const periodStart = sec.periodStart;
+    const periodEnd = sec.periodEnd;
+
+    // fechamento = mês do periodEnd
+    const endDt = parseBRDate(periodEnd);
+    const refKey = endDt ? `${String(endDt.getMonth()+1).padStart(2,"0")}/${endDt.getFullYear()}` : `??/????`;
+
+    if(!persons.has(name)) persons.set(name, new Map());
+    const byRef = persons.get(name);
+    if(!byRef.has(refKey)){
+      byRef.set(refKey, { refKey, periodStart, periodEnd, days: new Map() });
+    }
+    const refObj = byRef.get(refKey);
+
+    const journeys = extractJourneys(sec.slice, periodStart, periodEnd);
+    for(const j of journeys){
+      const isJornada = /Jornada\s+de\s+Trabalho/i.test(j.func);
+      if(!isJornada) continue;
+
+      const inHHMM = onlyHHMM(j.startTime);
+      let outHHMM = onlyHHMM(j.endTime);
+
+      // virada noturna: se terminou no dia seguinte e horário "volta"
+      if(j.startDate !== j.endDate && isNextDay(j.startDate, j.endDate)){
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null && b < a){
+          outHHMM = add24(outHHMM); // ex: 02:10 -> 26:10
+        }
+      }
+
+      // Regra: descartar pares com duração muito longa (provável erro de sistema).
+      // Ex.: 13:33 -> 05:52 (dia seguinte) dá ~16h e deve ser ignorado.
+      // Não interfere na virada noturna "válida" (ex.: 18:00 -> 02:00), pois a duração continua curta.
+      const MAX_PAIR_MIN = 14 * 60; // 14h
+      {
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null){
+          let dur = b - a;
+          const crossesDay = (String(j.startDate||"") !== String(j.endDate||""));
+          if(dur < 0) dur += 24*60;
+          if(crossesDay && dur > MAX_PAIR_MIN){
+            continue; // ignora este registro (muito longo atravessando dia)
+          }
+        }
+      }
+
+      const key = j.startDate;
+      if(!refObj.days.has(key)) refObj.days.set(key, []);
+      const arr = refObj.days.get(key);
+      if(inHHMM) arr.push(inHHMM);
+      if(outHHMM) arr.push(outHHMM);
+    }
+
+    
+    // Regra (bugfix): suprimir horários duplicados no mesmo dia (especialmente os gerados por Espera/Jornada juntos).
+    for(const [d, arr] of refObj.days.entries()){
+      refObj.days.set(d, suppressDuplicateTimesInDay(arr));
+    }
+
+// Regra: se um dia tem APENAS duas batidas e elas são iguais (duplicadas), deixar em branco.
+    for(const [d, arr] of refObj.days.entries()){
+      if(arr && arr.length === 2 && arr[0] === arr[1]){
+        refObj.days.set(d, []);
+      }
+    }
+  }
+
+  // Converter Map -> objetos mais fáceis
+  const result = [];
+  for(const [name, refsMap] of persons.entries()){
+    const refs = [];
+    for(const [refKey, obj] of refsMap.entries()){
+      refs.push(obj);
+    }
+    refs.sort((a,b)=>{
+      const pa = /^(\d{2})\/(\d{4})$/.exec(a.refKey||"");
+      const pb = /^(\d{2})\/(\d{4})$/.exec(b.refKey||"");
+      const ya = pa ? parseInt(pa[2],10) : 9999;
+      const yb = pb ? parseInt(pb[2],10) : 9999;
+      const ma = pa ? parseInt(pa[1],10) : 99;
+      const mb = pb ? parseInt(pb[1],10) : 99;
+      if(ya !== yb) return ya - yb;
+      return ma - mb;
+    });
+    result.push({ name, refs });
+  }
+  result.sort((a,b)=> a.name.localeCompare(b.name));
+  return result;
+}
+
+function buildWeeks(periodStart, periodEnd){
+  const start = parseBRDate(periodStart);
+  const end = parseBRDate(periodEnd);
+  if(!start || !end) return [];
+  // incluir end inclusive
+  const all = [];
+  for(let d = new Date(start.getTime()); d <= end; d = addDays(d,1)){
+    all.push(new Date(d.getTime()));
+  }
+  if(!all.length) return [];
+
+  // weeks keyed by monday date
+  const weeks = new Map();
+  for(const d of all){
+    const mon = mondayOf(d);
+    const k = mon.toISOString().slice(0,10);
+    if(!weeks.has(k)) weeks.set(k, { mon, days: [] });
+  }
+  // preencher cada semana com 7 dias (Seg->Dom)
+  for(const w of weeks.values()){
+    const days = [];
+    for(let i=0;i<7;i++) days.push(addDays(w.mon, i));
+    w.days = days;
+  }
+  // ordenar
+  return Array.from(weeks.values()).sort((a,b)=> a.mon - b.mon);
+}
+
+function fmtExcelTime(hhmm){
+  // Mantém exatamente como está no texto (HH:MM).
+  return (hhmm||"");
+}
+
+function toTSVForWeek(weekDays, inRangeFn, dayToTimes, weekLabel){
+  // Formato (TSV):
+  // Linha 1: "Semana\t<dd/mm/aaaa a dd/mm/aaaa>"
+  // Linhas seguintes: apenas batidas (sem Data/Dia e sem "Entrada1/Saída1").
+  // Cada linha = um dia do período (Seg→Dom) com N colunas de horários (pares Entrada/Saída).
+  //
+  // Observações:
+  // - Se faltar par, completa com vazio.
+  // - Se tiver 1 batida só (ímpar), completa vazio.
+  // - Mantemos colunas suficientes para a MAIOR linha da semana (para colar “retinho” no Excel).
+  let maxCols = 0;
+  const rows = [];
+
+  for(const d of weekDays){
+    if(!inRangeFn(d)) continue;
+    const k = fmtBRDate(d);
+    const times = (dayToTimes.get(k) || []).slice();
+
+    // garantir pares
+    if(times.length % 2 === 1) times.push("");
+
+    maxCols = Math.max(maxCols, times.length);
+    rows.push({ times });
+  }
+
+  const lines = [];
+  if(weekLabel){
+    lines.push(["Semana", weekLabel].join("\t"));
+  }
+
+  for(const r of rows){
+    const line = [];
+    for(let i=0;i<maxCols;i++){
+      line.push(fmtExcelTime(r.times[i] || ""));
+    }
+    lines.push(line.join("\t"));
+  }
+
+  return lines.join("\n");
+}
+
+function render(model){
+  elOut.innerHTML = "";
+  if(!model.length){
+    elOut.innerHTML = `<div class="section"><div class="muted">Nenhum período/jornada encontrado. Verifique se o texto contém “Período:” e linhas de “Função:”.</div></div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  for(const person of model){
+    const wrap = document.createElement("div");
+    wrap.className = "person";
+    wrap.innerHTML = `<h2>${escapeHtml(person.name)}</h2>`;
+
+    for(const ref of person.refs){
+      const refBox = document.createElement("div");
+      refBox.className = "ref";
+
+      const weeks = buildWeeks(ref.periodStart, ref.periodEnd);
+      const start = parseBRDate(ref.periodStart);
+      const end = parseBRDate(ref.periodEnd);
+      const inRangeFn = (d)=> (start && end && d>=start && d<=end);
+
+      const refHead = document.createElement("div");
+      refHead.className = "refhead";
+      refHead.innerHTML = `
+        <div>
+          <div style="font-weight:800;">Referência: ${escapeHtml(ref.refKey)}</div>
+          <div class="meta">Período: ${escapeHtml(ref.periodStart)} → ${escapeHtml(ref.periodEnd)}</div>
+        </div>
+        <div class="meta">Semanas: ${weeks.filter(w=>w.days.some(inRangeFn)).length}</div>
+      `;
+      refBox.appendChild(refHead);
+
+      const weeksWrap = document.createElement("div");
+      weeksWrap.className = "weeks";
+
+      for(const w of weeks){
+        const visDays = w.days.filter(inRangeFn);
+        if(!visDays.length) continue;
+
+        const wk = document.createElement("div");
+        wk.className = "week";
+
+        const vStart = visDays[0];
+        const vEnd = visDays[visDays.length-1];
+        const title = `Semana ${fmtBRDate(vStart)} a ${fmtBRDate(vEnd)}`;
+
+        const tsvCopy = toTSVForWeek(visDays, ()=>true, ref.days, null);
+
+        const head = document.createElement("div");
+        head.className = "weekhead";
+        head.innerHTML = `
+          <div class="weektitle">${escapeHtml(title)}</div>
+          <button class="btn secondary" type="button">Copiar semana</button>
+        `;
+        const btn = head.querySelector("button");
+        btn.addEventListener("click", async ()=>{
+          await copyToClipboard(tsvCopy);
+          setStatus("Copiado para a área de transferência (TSV com TAB). Cole direto no Excel.");
+          const old = btn.textContent;
+          btn.textContent = "Copiado";
+          btn.disabled = true;
+          window.setTimeout(()=>{
+            btn.textContent = old;
+            btn.disabled = false;
+          }, 2500);
+        });
+
+        const table = document.createElement("table");
+        table.className = "tbl";
+
+        // calcula max colunas (para exibição) — somente batidas, sem Data/Dia e sem "Entrada1/Saída1"
+        let maxCols = 0;
+        for(const d of visDays){
+          const times = (ref.days.get(fmtBRDate(d)) || []);
+          maxCols = Math.max(maxCols, times.length + (times.length%2));
+        }
+
+        const tbody = document.createElement("tbody");
+
+        for(const d of visDays){ // não mostra fora do período
+          const dk = fmtBRDate(d);
+          const times = (ref.days.get(dk) || []).slice();
+          if(times.length % 2 === 1) times.push("");
+
+          const tr = document.createElement("tr");
+          for(let i=0;i<maxCols;i++){
+            const td = document.createElement("td");
+            td.className = "mono";
+            td.textContent = fmtExcelTime(times[i] || "");
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        wk.appendChild(head);
+        wk.appendChild(table);
+        weeksWrap.appendChild(wk);
+      }
+
+      refBox.appendChild(weeksWrap);
+      wrap.appendChild(refBox);
+    }
+
+    frag.appendChild(wrap);
+  }
+
+  elOut.appendChild(frag);
+}
+
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+async function copyToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+}
+
+function simulateProgress(msTotal=900){
+  // progresso fake discreto (já que texto é instantâneo)
+  let pct = 0;
+  const start = performance.now();
+  return new Promise(resolve=>{
+    function tick(){
+      const t = performance.now() - start;
+      pct = Math.min(99, Math.floor((t/msTotal)*100));
+      setStatus(`Carregando... ${pct}%`);
+      if(t >= msTotal) return resolve();
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+btnProcess.addEventListener("click", async ()=>{
+  const raw = (elRaw.value||"").trim();
+  if(!raw){
+    setStatus("Cole o texto (ou suba um .txt) antes de processar.");
+    return;
+  }
+
+  setLoading(true);
+  elOut.innerHTML = "";
+  setStatus("Carregando... 0%");
+
+  await simulateProgress(800);
+
+  // processar
+  let model = [];
+  try{
+    model = buildDataModel(raw);
+  }catch(err){
+    console.error(err);
+    setStatus("Não consegui interpretar o texto. Se puder, envie mais um TXT/PDF de outro mês para eu ajustar as heurísticas.");
+    setLoading(false);
+    return;
+  }
+
+  setStatus("Carregando... 100%");
+  render(model);
+  setLoading(false);
+  flashReady();
+  setStatus("Processamento concluído. Use 'Copiar semana' e cole no Excel.");
+});
+
+btnClear.addEventListener("click", ()=>{
+  elRaw.value = "";
+  elTxtFile.value = "";
+elOut.innerHTML = "";
+  setStatus("");
+});
+
+elTxtFile.addEventListener("change", async (ev)=>{
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  setLoading(true);
+  setStatus("Carregando... 0%");
+  const txt = await f.text();
+  // manter quebras de linha (não normalizar aqui)
+  elRaw.value = txt;
+  setStatus("TXT carregado. Clique em 'Processar texto'.");
+  setLoading(false);
+  flashReady();
+});
+</script>
+</body>
+</html>

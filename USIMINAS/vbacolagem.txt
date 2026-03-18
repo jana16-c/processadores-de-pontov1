@@ -1,0 +1,49 @@
+Option Explicit
+
+Sub ImportarBatidasPorData()
+
+    Dim caminhoOrigem As Variant
+    Dim caminhoAlvo As Variant
+    
+    Dim wbOrigem As Workbook
+    Dim wbAlvo As Workbook
+    
+    Dim wsOrigem As Worksheet
+    Dim wsAlvo As Worksheet
+    
+    Dim ultimaLinhaOrigem As Long
+    Dim i As Long
+    Dim linhaDestino As Long
+    
+    Dim dataOrigem As Date
+    Dim encontrou As Boolean
+    
+    Dim totalCopiados As Long
+    Dim totalNaoEncontrados As Long
+    Dim totalDiasSemanaDivergentes As Long
+    
+    Dim msgLog As String
+    Dim nomeAbaPreferencial As String
+    
+    On Error GoTo TratarErro
+    
+    ' Seleciona arquivo de origem
+    caminhoOrigem = Application.GetOpenFilename( _
+        Title:="Selecione o arquivo Excel de ORIGEM", _
+        FileFilter:="Arquivos Excel (*.xls; *.xlsx; *.xlsm; *.xlsb), *.xls; *.xlsx; *.xlsm; *.xlsb")
+    
+    If caminhoOrigem = False Then
+        MsgBox "Nenhum arquivo de origem foi selecionado. Operação cancelada.", vbExclamation, "Aviso"
+        Exit Sub
+    End If
+    
+    ' Seleciona arquivo alvo
+    caminhoAlvo = Application.GetOpenFilename( _
+        Title:="Selecione o arquivo Excel ALVO", _
+        FileFilter:="Arquivos Excel (*.xls; *.xlsx; *.xlsm; *.xlsb), *.xls; *.xlsx; *.xlsm; *.xlsb")
+    
+    If caminhoAlvo = False Then
+        MsgBox "Nenhum arquivo alvo foi selecionado. Operação cancelada.", vbExclamation, "Aviso"
+        Exit Sub
+    End If
+    

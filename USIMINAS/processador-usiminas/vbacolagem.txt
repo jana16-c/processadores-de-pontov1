@@ -1,0 +1,254 @@
+Option Explicit
+
+Sub ImportarBatidasPorData()
+
+    Dim caminhoOrigem As Variant
+    Dim caminhoAlvo As Variant
+    
+    Dim wbOrigem As Workbook
+    Dim wbAlvo As Workbook
+    
+    Dim wsOrigem As Worksheet
+    Dim wsAlvo As Worksheet
+    
+    Dim ultimaLinhaOrigem As Long
+    Dim i As Long
+    Dim linhaDestino As Long
+    
+    Dim dataOrigem As Date
+    Dim encontrou As Boolean
+    Dim nomeAbaPreferencial As String
+    
+    Dim totalCopiados As Long
+    Dim totalNaoEncontrados As Long
+    Dim logErros As String
+    
+    On Error GoTo TratarErro
+    
+    ' Seleciona arquivo de origem
+    caminhoOrigem = Application.GetOpenFilename( _
+        FileFilter:="Arquivos Excel (*.xls; *.xlsx; *.xlsm; *.xlsb),*.xls;*.xlsx;*.xlsm;*.xlsb", _
+        Title:="Selecione o arquivo de ORIGEM")
+    
+    If caminhoOrigem = False Then
+        MsgBox "Seleção do arquivo de origem cancelada.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Seleciona arquivo alvo
+    caminhoAlvo = Application.GetOpenFilename( _
+        FileFilter:="Arquivos Excel (*.xls; *.xlsx; *.xlsm; *.xlsb),*.xls;*.xlsx;*.xlsm;*.xlsb", _
+        Title:="Selecione o arquivo ALVO")
+    
+    If caminhoAlvo = False Then
+        MsgBox "Seleção do arquivo alvo cancelada.", vbExclamation
+        Exit Sub
+    End If
+    
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+    Application.Calculation = xlCalculationManual
+    
+    Set wbOrigem = Workbooks.Open(CStr(caminhoOrigem))
+    Set wbAlvo = Workbooks.Open(CStr(caminhoAlvo))
+    
+    totalCopiados = 0
+    totalNaoEncontrados = 0
+    logErros = ""
+    
+    ' Percorre todas as abas da origem
+    For Each wsOrigem In wbOrigem.Worksheets
+        
+        ultimaLinhaOrigem = wsOrigem.Cells(wsOrigem.Rows.Count, "A").End(xlUp).Row
+        
+        For i = 1 To ultimaLinhaOrigem
+            
+            If IsDate(wsOrigem.Cells(i, "A").Value) Then
+                
+                If Trim(CStr(wsOrigem.Cells(i, "C").Value)) <> "" Then
+                    
+                    dataOrigem = CDate(wsOrigem.Cells(i, "A").Value)
+                    encontrou = False
+                    
+                    ' Primeiro tenta achar a aba pelo mês/ano da data
+                    nomeAbaPreferencial = NomeMes(dataOrigem) & " " & Year(dataOrigem)
+                    Set wsAlvo = Nothing
+                    
+                    On Error Resume Next
+                    Set wsAlvo = wbAlvo.Worksheets(nomeAbaPreferencial)
+                    On Error GoTo TratarErro
+                    
+                    If Not wsAlvo Is Nothing Then
+                        linhaDestino = EncontrarLinhaNoAlvo(wsAlvo, dataOrigem, wsOrigem.Cells(i, "B").Value)
+                        
+                        If linhaDestino > 0 Then
+                            wsAlvo.Cells(linhaDestino, "C").Value = wsOrigem.Cells(i, "C").Value
+                            wsAlvo.Cells(linhaDestino, "D").Value = wsOrigem.Cells(i, "D").Value
+                            wsAlvo.Cells(linhaDestino, "E").Value = wsOrigem.Cells(i, "E").Value
+                            wsAlvo.Cells(linhaDestino, "F").Value = wsOrigem.Cells(i, "F").Value
+                            totalCopiados = totalCopiados + 1
+                            encontrou = True
+                        End If
+                    End If
+                    
+                    ' Se não achou na aba esperada, busca em todas as abas de mês
+                    If Not encontrou Then
+                        For Each wsAlvo In wbAlvo.Worksheets
+                            If EhAbaMes(wsAlvo.Name) Then
+                                
+                                linhaDestino = EncontrarLinhaNoAlvo(wsAlvo, dataOrigem, wsOrigem.Cells(i, "B").Value)
+                                
+                                If linhaDestino > 0 Then
+                                    wsAlvo.Cells(linhaDestino, "C").Value = wsOrigem.Cells(i, "C").Value
+                                    wsAlvo.Cells(linhaDestino, "D").Value = wsOrigem.Cells(i, "D").Value
+                                    wsAlvo.Cells(linhaDestino, "E").Value = wsOrigem.Cells(i, "E").Value
+                                    wsAlvo.Cells(linhaDestino, "F").Value = wsOrigem.Cells(i, "F").Value
+                                    totalCopiados = totalCopiados + 1
+                                    encontrou = True
+                                    Exit For
+                                End If
+                            End If
+                        Next wsAlvo
+                    End If
+                    
+                    If Not encontrou Then
+                        totalNaoEncontrados = totalNaoEncontrados + 1
+                        logErros = logErros & vbCrLf & _
+                                   "Data não encontrada: " & Format(dataOrigem, "dd/mm/yyyy") & _
+                                   " | Aba origem: " & wsOrigem.Name & _
+                                   " | Linha: " & i
+                    End If
+                    
+                End If
+            End If
+        Next i
+    Next wsOrigem
+    
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    
+    MsgBox "Concluído." & vbCrLf & vbCrLf & _
+           "Linhas copiadas: " & totalCopiados & vbCrLf & _
+           "Datas não encontradas: " & totalNaoEncontrados & _
+           IIf(logErros <> "", vbCrLf & vbCrLf & "Log:" & vbCrLf & Left(logErros, 2500), ""), _
+           vbInformation, "Importação finalizada"
+    
+    Exit Sub
+
+TratarErro:
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    
+    MsgBox "Erro: " & Err.Description, vbCritical, "Erro na macro"
+
+End Sub
+
+Private Function EncontrarLinhaNoAlvo(ByVal ws As Worksheet, ByVal dataBusca As Date, ByVal diaSemanaOrigem As Variant) As Long
+    
+    Dim i As Long
+    Dim ultimaLinha As Long
+    Dim diaOrigem As String
+    Dim diaAlvo As String
+    
+    EncontrarLinhaNoAlvo = 0
+    ultimaLinha = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    diaOrigem = NormalizarDiaSemana(CStr(diaSemanaOrigem))
+    
+    For i = 12 To ultimaLinha
+        
+        If IsDate(ws.Cells(i, "A").Value) Then
+            
+            If CLng(CDate(ws.Cells(i, "A").Value)) = CLng(dataBusca) Then
+                
+                diaAlvo = NormalizarDiaSemana(CStr(ws.Cells(i, "B").Value))
+                
+                If diaOrigem <> "" And diaAlvo <> "" Then
+                    If Left(diaOrigem, 3) = Left(diaAlvo, 3) Then
+                        EncontrarLinhaNoAlvo = i
+                        Exit Function
+                    End If
+                Else
+                    EncontrarLinhaNoAlvo = i
+                    Exit Function
+                End If
+                
+            End If
+        End If
+    Next i
+End Function
+
+Private Function NomeMes(ByVal dt As Date) As String
+    Select Case Month(dt)
+        Case 1: NomeMes = "JAN"
+        Case 2: NomeMes = "FEV"
+        Case 3: NomeMes = "MAR"
+        Case 4: NomeMes = "ABR"
+        Case 5: NomeMes = "MAI"
+        Case 6: NomeMes = "JUN"
+        Case 7: NomeMes = "JUL"
+        Case 8: NomeMes = "AGO"
+        Case 9: NomeMes = "SET"
+        Case 10: NomeMes = "OUT"
+        Case 11: NomeMes = "NOV"
+        Case 12: NomeMes = "DEZ"
+    End Select
+End Function
+
+Private Function EhAbaMes(ByVal nome As String) As Boolean
+    nome = UCase(Trim(nome))
+    
+    EhAbaMes = _
+        InStr(nome, "JAN") > 0 Or _
+        InStr(nome, "FEV") > 0 Or _
+        InStr(nome, "MAR") > 0 Or _
+        InStr(nome, "ABR") > 0 Or _
+        InStr(nome, "MAI") > 0 Or _
+        InStr(nome, "JUN") > 0 Or _
+        InStr(nome, "JUL") > 0 Or _
+        InStr(nome, "AGO") > 0 Or _
+        InStr(nome, "SET") > 0 Or _
+        InStr(nome, "OUT") > 0 Or _
+        InStr(nome, "NOV") > 0 Or _
+        InStr(nome, "DEZ") > 0
+End Function
+
+Private Function NormalizarDiaSemana(ByVal txt As String) As String
+    
+    Dim s As String
+    
+    s = UCase(Trim(txt))
+    
+    s = Replace(s, "Á", "A")
+    s = Replace(s, "À", "A")
+    s = Replace(s, "Ã", "A")
+    s = Replace(s, "Â", "A")
+    s = Replace(s, "É", "E")
+    s = Replace(s, "Ê", "E")
+    s = Replace(s, "Í", "I")
+    s = Replace(s, "Ó", "O")
+    s = Replace(s, "Ô", "O")
+    s = Replace(s, "Õ", "O")
+    s = Replace(s, "Ú", "U")
+    s = Replace(s, "Ç", "C")
+    s = Replace(s, "-", "")
+    s = Replace(s, ".", "")
+    s = Replace(s, "FEIRA", "")
+    s = Replace(s, " ", "")
+    
+    If Left(s, 3) = "seg" Then s = "seg"
+    If Left(s, 3) = "ter" Then s = "ter"
+    If Left(s, 3) = "qua" Then s = "qua"
+    If Left(s, 3) = "qui" Then s = "qui"
+    If Left(s, 3) = "sex" Then s = "sex"
+    If Left(s, 3) = "sab" Then s = "sab"
+    If Left(s, 3) = "dom" Then s = "dom"
+    
+    NormalizarDiaSemana = s
+    
+End Function

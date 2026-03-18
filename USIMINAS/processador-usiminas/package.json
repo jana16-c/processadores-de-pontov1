@@ -1,0 +1,10 @@
+{
+  "name": "processador-usiminas",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "test": "node test-night-shift.js"
+  },
+  "description": "Processador de espelhos de ponto Usiminas"
+}

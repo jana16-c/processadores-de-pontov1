@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Processador de ponto — Usiminas</title>
+
+    <style>
+        :root{
+            --bg:#0b1220;
+            --card:#0f1a2e;
+            --muted:#8aa0c2;
+            --text:#e7eefc;
+            --line:rgba(255,255,255,.10);
+            --blue:#4aa3ff;
+            --danger-bg:rgba(255,80,80,.10);
+            --danger:#fecdd3;
+            --success:#22c55e;
+            --warning-bg:rgba(245, 158, 11, 0.15);
+            --warning-border:#f59e0b;
+        }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background:
+                radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+            color:var(--text);
+            padding:28px 18px 48px;
+        }
+
+        .container{ width:100%; max-width:1100px; margin:0 auto; }
+        
+        /* Cabeçalho e Botão Seletor (Segmented Control) */
+        header{ margin-bottom:18px; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+        h1{ margin:0; font-size:22px; letter-spacing:.2px; transition: 0.3s; }
+        .sub{ color:var(--muted); font-size:13px; line-height:1.35; margin-top: 6px; }
+
+        .mode-switch {
+            display: flex;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .mode-switch input[type="radio"] { display: none; }
+        .mode-switch label {
+            padding: 8px 16px; margin: 0; cursor: pointer; border-radius: 6px;
+            font-size: 13px; font-weight: 600; color: var(--muted); transition: 0.2s;
+            user-select: none;
+        }
+        .mode-switch input[type="radio"]:checked + label {
+            background: rgba(74, 163, 255, 0.15);
+            color: var(--blue);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card{
+            background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+            border:1px solid var(--line);
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 10px 30px rgba(0,0,0,.25);
+        }
+
+        .section{ padding:16px; border-top:1px solid var(--line); }
+        .section:first-child{ border-top:none; }
+
+        label{ display:block; color:var(--muted); font-size:12px; margin:0 0 8px; }
+
+        textarea{
+            width:100%; min-height:240px; resize:vertical; padding:12px;
+            border-radius:12px; border:1px solid var(--line);
+            background:rgba(0,0,0,.18); color:var(--text); outline:none;
+            line-height:1.35;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size:12.5px;
+        }
+        textarea:focus{ border-color:rgba(74,163,255,.55); box-shadow:0 0 0 3px rgba(74,163,255,.14); }
+
+        .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+
+        .btn-main, .btn-copy{
+            appearance:none; border:1px solid var(--line); color:var(--text);
+            padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600; transition:.15s;
+        }
+        .btn-main{ background:rgba(74,163,255,.12); }
+        .btn-main:hover, .btn-copy:hover{ transform:translateY(-1px); border-color:rgba(74,163,255,.55); }
+        .btn-copy{ background:rgba(255,255,255,.06); font-size:12px; }
+        .btn-copy.copied{ background:rgba(34,197,94,.18); border-color:rgba(34,197,94,.55); }
+
+        .error-msg{
+            background:var(--danger-bg); color:var(--danger); padding:12px;
+            border-radius:10px; margin-bottom:14px; display:none; font-size:13px;
+            border:1px solid rgba(255,80,80,.18);
+        }
+
+        .result-block{ border-top:1px solid var(--line); padding:16px; }
+        .result-block:first-child{ border-top:none; }
+        .person-name{ font-size:15px; font-weight:800; margin:0 0 10px; }
+
+        .month-card{ margin-top:12px; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+        .card-header{
+            padding:10px 12px; display:flex; justify-content:space-between; align-items:center;
+            gap:10px; background:rgba(0,0,0,.16); border-bottom:1px solid var(--line);
+        }
+        .month-label{ font-size:13px; font-weight:800; text-transform:capitalize; }
+        .month-meta{ color:var(--muted); font-size:12px; margin-top:2px; }
+        .weeks{ padding:10px 12px; }
+        .week{ border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:10px; }
+        .week:last-child{ margin-bottom:0; }
+        .weekhead{
+            display:flex; justify-content:space-between; align-items:center; gap:10px;
+            padding:10px 12px; background:rgba(255,255,255,.04); border-bottom:1px solid var(--line);
+        }
+        .weektitle{ font-weight:800; font-size:13px; }
+
+        .tbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
+        .tbl td{
+            border-bottom:1px solid rgba(255,255,255,.07); padding:8px 10px; vertical-align:top;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+        .tbl tr:last-child td{ border-bottom:none; }
+        .muted{ color:var(--muted); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-content">
+            <h1 id="main-title">Processador de ponto - Usiminas (Padrão)</h1>
+            <div class="mode-switch">
+                <input type="radio" id="mode-v1" name="mode" value="v1" checked onchange="updateMode()">
+                <label for="mode-v1">Padrão</label>
+                
+                <input type="radio" id="mode-v2" name="mode" value="v2" onchange="updateMode()">
+                <label for="mode-v2">Versão 2</label>
+            </div>
+        </div>
+        <div class="sub"></div>
+    </header>
+
+    <div class="card">
+        <div class="section">
+            <div id="error-box" class="error-msg"></div>
+            <label>Cole o texto copiado do espelho de ponto aqui :</label>
+            <textarea id="raw-data" placeholder=""></textarea>
+            
+            <label style="margin-top: 16px;">Intervalo de refeição (HH:MM) - deixe vazio para não adicionar:</label>
+            <input type="text" id="meal-interval" placeholder="Ex: 01:00 (1 hora) ou 00:30 (30 min)" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.18); color: var(--text); outline: none; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 12.5px;" />
+            
+            <div class="row">
+                <button id="btn-process" class="btn-main" onclick="processData()">Processar</button>
+                <button id="btn-clear" class="btn-copy" onclick="clearData()">Limpar Tudo</button>
+            </div>
+        </div>
+        <div id="results-area"></div>
+    </div>
+</div>
+
+<script>
+    // =======================================================
+    // CONTROLES DE INTERFACE (Botões, Abas e Alertas)
+    // =======================================================
+    function updateMode() {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        const titleEl = document.getElementById('main-title');
+        if (mode === 'v2') {
+            titleEl.textContent = 'Processador de ponto - Usiminas (V2)';
+            document.title = 'Processador de ponto — Usiminas (V2)';
+        } else {
+            titleEl.textContent = 'Processador de ponto - Usiminas (Padrão)';
+            document.title = 'Processador de ponto — Usiminas (Padrão)';
+        }
+    }
+
+    function clearData() {
+        document.getElementById('raw-data').value = '';
+        document.getElementById('results-area').innerHTML = '';
+        document.getElementById('error-box').style.display = 'none';
+    }
+
+    function showError(msg) {
+        const box = document.getElementById('error-box');
+        box.innerText = msg;
+        box.style.display = 'block';
+    }
+
+    function processData() {
+        const btn = document.getElementById('btn-process');
+        const originalText = btn.textContent;
+        btn.textContent = "Processando...";
+        btn.disabled = true;
+
+        const rawData = document.getElementById('raw-data').value;
+        const mealIntervalStr = document.getElementById('meal-interval').value;
+        const mealIntervalMin = parseIntervalInput(mealIntervalStr);
+
+        const output = document.getElementById('results-area');
+        const errBox = document.getElementById('error-box');
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+
+        output.innerHTML = '';
+        errBox.style.display = 'none';
+
+        if (!rawData.trim()) {
+            showError("Por favor, cole o texto do PDF.");
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            let found = false;
+
+            if (mode === 'v1') {
+                const dataMap = parseInputV1(rawData);
+                Object.keys(dataMap).sort().forEach(name => {
+                    let timeline = dataMap[name] || [];
+                    if (!timeline.length) return;
+                    found = true;
+                    timeline.sort((a, b) => a.data - b.data);
+                    timeline = adjustShiftsV1(timeline);
+                    timeline = applyMealIntervalsToTimeline(timeline, mealIntervalMin);
+                    renderPersonV1(name, timeline, output);
+                });
+            } else {
+                const dataMap = parseInputV2(rawData);
+                Object.keys(dataMap).sort().forEach(name => {
+                    let timeline = dataMap[name] || [];
+                    if (!timeline.length) return;
+                    found = true;
+                    timeline.sort((a, b) => a.data - b.data);
+                    timeline = adjustShiftsV2(timeline);
+                    timeline = applyMealIntervalsToTimeline(timeline, mealIntervalMin);
+                    renderPersonV2(name, timeline, output);
+                });
+            }
+
+            if (!found) {
+                showError("Nenhum funcionário ou batida foi encontrado no texto.");
+            }
+        } catch (e) {
+            console.error(e);
+            showError("Erro ao processar o arquivo.");
+        }
+
+        btn.textContent = "Processado!";
+        btn.classList.add("copied");
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove("copied");
+            btn.disabled = false;
+        }, 2000);
+    }
+
+
+    // =======================================================
+    // FUNÇÕES COMPARTILHADAS (Datas, Tabelas e Clipboard)
+    // =======================================================
+    const ptDays = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6, 'sáb': 6 };
+
+    function toMin(str) {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function minToTime(minutes) {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function parseIntervalInput(intervalStr) {
+        if (!intervalStr || !intervalStr.trim()) return 0;
+        const parts = intervalStr.trim().split(':');
+        if (parts.length === 2) {
+            const h = parseInt(parts[0]) || 0;
+            const m = parseInt(parts[1]) || 0;
+            return h * 60 + m;
+        }
+        return 0;
+    }
+
+    function addMealIntervalTimes(times, intervalMinutes) {
+        if (!intervalMinutes || times.length !== 2) return times;
+
+        const entryMin = toMin(times[0]);
+        const exitMin = toMin(times[1]);
+        const totalDuration = exitMin - entryMin;
+
+        if (totalDuration <= intervalMinutes) return times;
+
+        const workDuration = totalDuration - intervalMinutes;
+        const firstHalfWork = Math.floor(workDuration / 2);
+
+        const exitIntervalMin = entryMin + firstHalfWork;
+        const entryIntervalMin = exitIntervalMin + intervalMinutes;
+
+        return [
+            times[0],
+            minToTime(exitIntervalMin),
+            minToTime(entryIntervalMin),
+            times[1]
+        ];
+    }
+
+    function applyMealIntervalsToTimeline(timeline, intervalMinutes) {
+        if (!intervalMinutes) return timeline;
+
+        return timeline.map(day => ({
+            ...day,
+            times: addMealIntervalTimes(day.times, intervalMinutes)
+        }));
+    }
+
+    function fmtBRDate(dt) {
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yy = dt.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+    }
+
+    function addDays(dt, n) {
+        const d = new Date(dt.getTime());
+        d.setDate(d.getDate() + n);
+        return d;
+    }
+
+    function mondayOf(dt) {
+        const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        const day = d.getDay(); 
+        const diff = (day === 0 ? -6 : 1 - day);
+        d.setDate(d.getDate() + diff);
+        return d;
+    }
+
+    function isNextCalendarDay(a, b) {
+        const d1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+        const d2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+        return (d2 - d1) === 24 * 60 * 60 * 1000;
+    }
+
+    function add24ToTime(hhmm) {
+        const [h, m] = hhmm.split(':').map(Number);
+        return `${h + 24}:${String(m).padStart(2, '0')}`;
+    }
+
+    function toTSVForWeek(weekDays, daysMap) {
+        let maxCols = 0;
+        const rows = [];
+        weekDays.forEach(d => {
+            const key = fmtBRDate(d);
+            const times = (daysMap.get(key) || []).slice();
+            if (times.length % 2 !== 0) times.push("");
+            maxCols = Math.max(maxCols, times.length);
+            rows.push(times);
+        });
+        return rows.map(times => {
+            const cols = times.slice();
+            while (cols.length < maxCols) cols.push("");
+            return cols.join("\t");
+        }).join("\n");
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (e) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+    }
+
+
+    // =======================================================
+    // MOTOR V1 (Agrupamento por Mês Real)
+    // =======================================================
+    function parseInputV1(text) {
+        const map = {};
+        const normalizedText = text.replace(/\r/g, '').replace(/\u00A0/g, ' ');
+        const periodRegex = /Per[ií]odo\s*de\s*\d{2}\.\d{2}\.\d{4}\s*at[eé]\s*\d{2}\.\d{2}\.\d{4}/gi;
+        const matches = [...normalizedText.matchAll(periodRegex)];
+
+        if (!matches.length) return map;
+
+        const sections = [];
+        for (let i = 0; i < matches.length; i++) {
+            const start = matches[i].index;
+            const end = (i + 1 < matches.length) ? matches[i + 1].index : normalizedText.length;
+            sections.push(normalizedText.slice(start, end));
+        }
+
+        for (const section of sections) {
+            parseSectionV1(section, map);
+        }
+        return map;
+    }
+
+    function parseSectionV1(sectionText, globalMap) {
+        const lines = sectionText.split('\n');
+        let currentName = null;
+        let periodStartDay = null, periodStartMonth = null, periodStartYear = null;
+        let periodEndDay = null, periodEndMonth = null, periodEndYear = null;
+        let rollingMonth = null, rollingYear = null, lastParsedDay = null;
+
+        const rgName = /(Colaborador|Funcionário|Funcionario|Nome)\s*:\s*(.+)/i;
+        const rgPeriod = /Per[ií]odo\s*de\s*(\d{2})\.(\d{2})\.(\d{4})\s*at[eé]\s*(\d{2})\.(\d{2})\.(\d{4})/i;
+        const rgDay = /^\s*(\d{2})\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\b/i;
+
+        let insideGrid = false;
+
+        for (const rawLine of lines) {
+            const l = rawLine.trim();
+            if (!l) continue;
+
+            const mPeriod = l.match(rgPeriod);
+            if (mPeriod) {
+                periodStartDay = parseInt(mPeriod[1], 10);
+                periodStartMonth = parseInt(mPeriod[2], 10);
+                periodStartYear = parseInt(mPeriod[3], 10);
+                periodEndDay = parseInt(mPeriod[4], 10);
+                periodEndMonth = parseInt(mPeriod[5], 10);
+                periodEndYear = parseInt(mPeriod[6], 10);
+                rollingMonth = periodStartMonth;
+                rollingYear = periodStartYear;
+                lastParsedDay = null;
+                continue;
+            }
+
+            const mName = l.match(rgName);
+            if (mName) {
+                let raw = mName[2].trim().replace(/^\d+\s*-\s*/, '').trim();
+                currentName = raw.toUpperCase();
+                if (!globalMap[currentName]) globalMap[currentName] = [];
+                continue;
+            }
+
+            if (/^Data\s+Dia\s+Regra/i.test(l)) { insideGrid = true; continue; }
+            if (/^Registros referentes/i.test(l) || /^N[uú]mero do processo/i.test(l) || 
+                /^N[uú]mero do documento/i.test(l) || /^https?:\/\//i.test(l) || 
+                /^Assinado eletronicamente/i.test(l) || /^ID\./i.test(l) || /^Fls\.\s*:/i.test(l)) {
+                insideGrid = false; continue;
+            }
+
+            if (!insideGrid) continue;
+
+            const mDay = l.match(rgDay);
+            if (mDay && currentName && periodStartMonth !== null) {
+                const day = parseInt(mDay[1], 10);
+                let realMonth, realYear;
+
+                if (periodStartMonth === periodEndMonth && periodStartYear === periodEndYear) {
+                    realMonth = periodStartMonth; realYear = periodStartYear;
+                } else {
+                    if (lastParsedDay !== null && day < lastParsedDay) {
+                        rollingMonth += 1;
+                        if (rollingMonth > 12) { rollingMonth = 1; rollingYear += 1; }
+                    }
+                    realMonth = rollingMonth; realYear = rollingYear;
+                }
+                lastParsedDay = day;
+
+                const allTimes = l.match(/\d{2}:\d{2}/g) || [];
+                let realTimes = [];
+                const temHorarioPlanejado = /^\s*\d{2}\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\s+\S+\s+\d{2}:\d{2}\s+\d{2}:\d{2}/i.test(l);
+
+                if (temHorarioPlanejado) realTimes = allTimes.slice(2);
+                else realTimes = allTimes;
+
+                const entryDate = new Date(realYear, realMonth - 1, day);
+                const endDate = new Date(periodEndYear, periodEndMonth - 1, periodEndDay);
+
+                if (entryDate <= endDate) {
+                    const isOffDay = /FOLGA|DSR|FERIADO/i.test(l);
+                    globalMap[currentName].push({ data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay });
+                }
+            }
+        }
+    }
+
+    function adjustShiftsV1(timeline) {
+        timeline.forEach(day => {
+            day.times = (day.times || []).slice().sort((a, b) => toMin(a) - toMin(b));
+        });
+
+        // PASSO 0: Separar madrugadas que formam pattern nonsense
+        // Se um dia começa com madrugada (< 12h) e tem noturna (>= 12h) depois,
+        // as madrugadas devem IR para o dia anterior
+        // TAMBÉM: Se dia tem APENAS madrugadas (sem noturnas), vai para dia anterior
+        for (let i = 1; i < timeline.length; i++) {
+            const today = timeline[i];
+            const yesterday = timeline[i - 1];
+
+            if (!isNextCalendarDay(yesterday.data, today.data)) continue;
+            if (!today.times.length) continue;
+
+            // Separa madrugadas (< 12h) e noturnas (>= 12h)
+            const morningTimes = [];  // < 12h (madrugada)
+            const nightTimes = [];    // >= 12h (noturna)
+
+            for (const t of today.times) {
+                const mins = toMin(t);
+                const hour = Math.floor(mins / 60);
+                if (hour < 12) {
+                    morningTimes.push(t);
+                } else {
+                    nightTimes.push(t);
+                }
+            }
+
+            // CASO 1: tem AMBAS (madrugadas E noturnas), as madrugadas vão para ontem
+            // CASO 2: tem APENAS madrugadas (e hoje é DSR ou sem turno), as madrugadas vão para ontem
+            if (morningTimes.length > 0 && (nightTimes.length > 0 || today.isOffDay)) {
+                // Move madrugadas para o dia anterior com +24h
+                const movedTimes = morningTimes.map(t => add24ToTime(t));
+                yesterday.times = [...(yesterday.times || []), ...movedTimes];
+                yesterday.times.sort((a, b) => toMin(a) - toMin(b));
+                
+                // Deixa apenas noturnas em hoje (ou nada, se for DSR)
+                today.times = nightTimes;
+            }
+        }
+
+        // PASSO 1: Detectar cruzamento de meia-noite e "roubar" batidas (igual ao Vale)
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const currentDay = timeline[i];
+            const nextDay = timeline[i + 1];
+
+            // Verifica se são dias consecutivos
+            const diffTime = Math.abs(nextDay.data - currentDay.data);
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1 && currentDay.times.length > 0 && nextDay.times.length > 0) {
+                // Detecta se o dia atual cruzou meia-noite (horários diminuem)
+                let crossedMidnight = false;
+                let prevMins = -1;
+                for (let t of currentDay.times) {
+                    const mins = toMin(t);
+                    if (mins < prevMins) crossedMidnight = true;
+                    prevMins = mins;
+                }
+
+                // Se cruzou meia-noite, tenta "roubar" batidas do próximo dia
+                if (crossedMidnight) {
+                    while (currentDay.times.length > 0 && nextDay.times.length >= 2) {
+                        const lastOut = currentDay.times[currentDay.times.length - 1];
+                        const nextIn = nextDay.times[0];
+
+                        // Se a última batida de hoje = primeira de amanhã, substitui pela segunda de amanhã
+                        if (lastOut === nextIn) {
+                            currentDay.times[currentDay.times.length - 1] = add24ToTime(nextDay.times[1]);
+                            nextDay.times.splice(0, 2);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // PASSO 2: Ajustar turnos abertos (ímpar de batidas) - lógica original
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const today = timeline[i];
+            const tomorrow = timeline[i + 1];
+
+            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
+            if (!today.times.length || !tomorrow.times.length) continue;
+
+            let changed = true;
+            while (changed) {
+                changed = false;
+                const todayOdd = today.times.length % 2 !== 0;
+                const tomorrowOdd = tomorrow.times.length % 2 !== 0;
+
+                if (!todayOdd || !tomorrow.times.length) break;
+
+                const lastToday = today.times[today.times.length - 1];
+                const firstTomorrow = tomorrow.times[0];
+
+                const lastTodayMin = toMin(lastToday);
+                const firstTomorrowMin = toMin(firstTomorrow);
+
+                if (todayOdd && tomorrowOdd) {
+                    tomorrow.times.shift();
+                    today.times.push(add24ToTime(firstTomorrow));
+                    changed = true; continue;
+                }
+
+                if (todayOdd && !tomorrowOdd) {
+                    const hoursGap = ((firstTomorrowMin + 24 * 60) - lastTodayMin) / 60;
+                    if (firstTomorrowMin < lastTodayMin || hoursGap <= 14) {
+                        tomorrow.times.shift();
+                        today.times.push(add24ToTime(firstTomorrow));
+                        changed = true; continue;
+                    }
+                }
+            }
+        }
+        return timeline;
+    }
+
+    function buildWeeksForMonthV1(year, monthIndex) {
+        const firstDay = new Date(year, monthIndex, 1);
+        const lastDay = new Date(year, monthIndex + 1, 0);
+        const weeks = new Map();
+
+        for (let d = new Date(firstDay); d <= lastDay; d = addDays(d, 1)) {
+            const mon = mondayOf(d);
+            const key = mon.toISOString().slice(0, 10);
+            if (!weeks.has(key)) weeks.set(key, { mon, days: [] });
+        }
+
+        for (const w of weeks.values()) {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(w.mon, i);
+                if (day.getFullYear() === year && day.getMonth() === monthIndex) days.push(day);
+            }
+            w.days = days;
+        }
+        return Array.from(weeks.values()).sort((a, b) => a.mon - b.mon);
+    }
+
+    function renderPersonV1(name, timeline, container) {
+        const block = document.createElement('div');
+        block.className = 'result-block';
+        block.innerHTML = `<div class="person-name">${name}</div>`;
+
+        const monthGroups = new Map();
+        timeline.forEach(item => {
+            const date = item.data;
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+            if (!monthGroups.has(monthKey)) {
+                monthGroups.set(monthKey, { year, month, daysMap: new Map() });
+            }
+            const g = monthGroups.get(monthKey);
+            g.daysMap.set(fmtBRDate(date), (item.times || []).slice().sort((a, b) => toMin(a) - toMin(b)));
+        });
+
+        Array.from(monthGroups.keys()).sort().forEach(monthKey => {
+            const g = monthGroups.get(monthKey);
+            const weeks = buildWeeksForMonthV1(g.year, g.month);
+            const monthName = new Date(g.year, g.month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            const lastDayOfMonth = new Date(g.year, g.month + 1, 0).getDate();
+
+            const card = document.createElement('div');
+            card.className = 'month-card';
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <div><div class="month-label">${monthName}</div>
+                <div class="month-meta">Dias do mês: 01 até ${String(lastDayOfMonth).padStart(2, '0')}</div></div>`;
+            card.appendChild(header);
+
+            const weeksWrap = document.createElement('div');
+            weeksWrap.className = 'weeks';
+
+            weeks.forEach(w => {
+                if (!w.days.length) return;
+                const start = w.days[0], end = w.days[w.days.length - 1];
+                
+                const weekBox = document.createElement('div');
+                weekBox.className = 'week';
+                const weekHead = document.createElement('div');
+                weekHead.className = 'weekhead';
+                weekHead.innerHTML = `<div class="weektitle">Semana ${fmtBRDate(start)} a ${fmtBRDate(end)}</div>`;
+                
+                const btn = document.createElement('button');
+                btn.className = 'btn-copy'; btn.textContent = 'Copiar semana';
+                const tsv = toTSVForWeek(w.days, g.daysMap);
+                btn.addEventListener('click', async () => {
+                    await copyToClipboard(tsv);
+                    const old = btn.textContent; btn.textContent = 'Copiado!'; btn.classList.add('copied');
+                    setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 2000);
+                });
+                weekHead.appendChild(btn);
+
+                const table = document.createElement('table');
+                table.className = 'tbl';
+                const tbody = document.createElement('tbody');
+
+                let maxCols = 0;
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    const len = times.length % 2 === 0 ? times.length : times.length + 1;
+                    maxCols = Math.max(maxCols, len);
+                });
+
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    if (times.length % 2 !== 0) times.push("");
+                    while (times.length < maxCols) times.push("");
+                    const tr = document.createElement('tr');
+                    times.forEach(t => { const td = document.createElement('td'); td.textContent = t || ""; tr.appendChild(td); });
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody); weekBox.appendChild(weekHead); weekBox.appendChild(table); weeksWrap.appendChild(weekBox);
+            });
+            card.appendChild(weeksWrap); block.appendChild(card);
+        });
+        container.appendChild(block);
+    }
+
+
+    // =======================================================
+    // MOTOR V2 (Agrupamento por Período de Apuração)
+    // =======================================================
+    function parseInputV2(text) {
+        const map = {};
+        const normalizedText = text.replace(/\r/g, '').replace(/\u00A0/g, ' ');
+
+        let globalName = "COLABORADOR NÃO IDENTIFICADO";
+        const rgName = /(?:Empregado|Nome|Colaborador|Funcionário|Funcionario)[\.\s]*:\s*([^\n]+)/i;
+        const mGlobalName = normalizedText.match(rgName);
+        if (mGlobalName) globalName = mGlobalName[1].trim().replace(/^\d+\s*-\s*/, '').trim().toUpperCase();
+
+        const extractedPeriods = [];
+        const rgPeriodGlobal = /Per[ií]odo.*?\s*(\d{2})\.(\d{2})\.(\d{4})\s+(?:at[eé]|a)\s+(\d{2})\.(\d{2})\.(\d{4})/gi;
+        let mPeriod;
+        while ((mPeriod = rgPeriodGlobal.exec(normalizedText)) !== null) {
+            extractedPeriods.push({
+                startDay: parseInt(mPeriod[1], 10), startMonth: parseInt(mPeriod[2], 10), startYear: parseInt(mPeriod[3], 10),
+                endDay: parseInt(mPeriod[4], 10), endMonth: parseInt(mPeriod[5], 10), endYear: parseInt(mPeriod[6], 10)
+            });
+        }
+
+        if (extractedPeriods.length === 0) {
+            const rgYear = /\b(20[1-3][0-9])\b/g;
+            let foundYear = new Date().getFullYear();
+            let mY = rgYear.exec(normalizedText);
+            if(mY) foundYear = parseInt(mY[1], 10);
+            
+            for(let y = foundYear - 1; y <= foundYear + 1; y++){
+                for(let m = 1; m <= 12; m++){
+                    let eM = m + 1, eY = y;
+                    if(eM > 12){ eM = 1; eY = y + 1; }
+                    extractedPeriods.push({ startDay: 16, startMonth: m, startYear: y, endDay: 15, endMonth: eM, endYear: eY });
+                }
+            }
+        }
+
+        const lines = normalizedText.split('\n');
+        const rgDay = /^\s*(\d{2})\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\b/i;
+        const isLayoutAntigo = /Data\s+Dia\s+Regra/i.test(normalizedText);
+
+        const blocks = [];
+        let currentBlock = [];
+
+        for (const line of lines) {
+            const l = line.trim();
+            if (!l) continue;
+            const mDay = l.match(rgDay);
+            if (mDay) {
+                currentBlock.push({ rawLine: l, day: parseInt(mDay[1], 10), wdayStr: mDay[2].toLowerCase() });
+            } else if (currentBlock.length > 0) {
+                blocks.push(currentBlock);
+                currentBlock = [];
+            }
+        }
+        if (currentBlock.length > 0) blocks.push(currentBlock);
+
+        if (!map[globalName]) map[globalName] = [];
+
+        for (const block of blocks) {
+            let bestPeriod = null;
+            let maxMatches = -1;
+
+            for (const p of extractedPeriods) {
+                let matchCount = 0;
+                for (const punch of block) {
+                    const testMonth = (punch.day >= 16) ? p.startMonth : p.endMonth;
+                    const testYear = (punch.day >= 16) ? p.startYear : p.endYear;
+                    const testDate = new Date(testYear, testMonth - 1, punch.day);
+                    if (testDate.getDate() === punch.day && testDate.getDay() === ptDays[punch.wdayStr]) { matchCount++; }
+                }
+                if (matchCount > block.length * 0.8 && matchCount > maxMatches) {
+                    maxMatches = matchCount; bestPeriod = p;
+                }
+            }
+
+            if (bestPeriod) {
+                const calibStartObj = new Date(bestPeriod.startYear, bestPeriod.startMonth - 1, bestPeriod.startDay);
+                const calibEndObj = new Date(bestPeriod.endYear, bestPeriod.endMonth - 1, bestPeriod.endDay);
+
+                for (const punch of block) {
+                    const l = punch.rawLine;
+                    const day = punch.day;
+                    const trueMonth = (day >= 16) ? bestPeriod.startMonth : bestPeriod.endMonth;
+                    const trueYear = (day >= 16) ? bestPeriod.startYear : bestPeriod.endYear;
+                    
+                    const rawTimes = l.match(/\d{1,2}:\d{2}/g) || [];
+                    const allTimes = rawTimes.map(t => { const [h, m] = t.split(':'); return `${h.padStart(2, '0')}:${m}`; });
+
+                    let realTimes = allTimes;
+                    if (isLayoutAntigo) {
+                        const temHorarioPlanejado = /^\s*\d{2}\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\s+\S+\s+\d{2}:\d{2}\s+\d{2}:\d{2}/i.test(l);
+                        if (temHorarioPlanejado && allTimes.length >= 2) realTimes = allTimes.slice(2);
+                    }
+
+                    const entryDate = new Date(trueYear, trueMonth - 1, day);
+                    const isOffDay = /FOLGA|DSR|FERIADO|COMP/i.test(l);
+                    
+                    map[globalName].push({
+                        data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay,
+                        periodStart: calibStartObj, periodEnd: calibEndObj
+                    });
+                }
+            }
+        }
+        return map;
+    }
+
+    function adjustShiftsV2(timeline) {
+        timeline.forEach(day => {
+            day.times = (day.times || []).slice();
+            let lastMin = -1;
+            for (let j = 0; j < day.times.length; j++) {
+                let currentMin = toMin(day.times[j]);
+                if (currentMin < lastMin) {
+                    day.times[j] = add24ToTime(day.times[j]);
+                    currentMin += 24 * 60;
+                }
+                lastMin = currentMin;
+            }
+        });
+
+        // PASSO 1: "Roubar" batidas entre dias consecutivos (cruzamento de meia-noite)
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const currentDay = timeline[i];
+            const nextDay = timeline[i + 1];
+
+            const diffTime = Math.abs(nextDay.data - currentDay.data);
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 1 && currentDay.times.length > 0 && nextDay.times.length > 0) {
+                let crossedMidnight = false;
+                let prevMins = -1;
+                for (let t of currentDay.times) {
+                    const mins = toMin(t);
+                    if (mins < prevMins) crossedMidnight = true;
+                    prevMins = mins;
+                }
+
+                if (crossedMidnight) {
+                    while (currentDay.times.length > 0 && nextDay.times.length >= 2) {
+                        const lastOut = currentDay.times[currentDay.times.length - 1];
+                        const nextIn = nextDay.times[0];
+
+                        if (lastOut === nextIn) {
+                            currentDay.times[currentDay.times.length - 1] = add24ToTime(nextDay.times[1]);
+                            nextDay.times.splice(0, 2);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // PASSO 2: Ajustar turnos abertos (ímpar de batidas)
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const today = timeline[i], tomorrow = timeline[i + 1];
+            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
+            if (!today.times.length || !tomorrow.times.length) continue;
+
+            let changed = true;
+            while (changed) {
+                changed = false;
+                const todayOdd = today.times.length % 2 !== 0;
+                const tomorrowOdd = tomorrow.times.length % 2 !== 0;
+
+                if (!todayOdd || !tomorrow.times.length) break;
+
+                const lastToday = today.times[today.times.length - 1];
+                const firstTomorrow = tomorrow.times[0];
+
+                const lastTodayMin = toMin(lastToday);
+                const firstTomorrowMin = toMin(firstTomorrow);
+
+                if (todayOdd && tomorrowOdd) {
+                    tomorrow.times.shift(); today.times.push(add24ToTime(firstTomorrow)); changed = true; continue;
+                }
+
+                if (todayOdd && !tomorrowOdd) {
+                    const hoursGap = ((firstTomorrowMin + 24 * 60) - lastTodayMin) / 60;
+                    if (firstTomorrowMin < lastTodayMin || hoursGap <= 14) {
+                        tomorrow.times.shift(); today.times.push(add24ToTime(firstTomorrow)); changed = true; continue;
+                    }
+                }
+            }
+        }
+        return timeline;
+    }
+
+    function buildWeeksForPeriodV2(startDate, endDate) {
+        const weeks = new Map();
+        const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+        for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+            const mon = mondayOf(d);
+            const key = fmtBRDate(mon); 
+            if (!weeks.has(key)) weeks.set(key, { mon, days: [] });
+        }
+
+        for (const w of weeks.values()) {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(w.mon, i);
+                if (day >= start && day <= end) days.push(day);
+            }
+            w.days = days;
+        }
+        return Array.from(weeks.values()).sort((a, b) => a.mon - b.mon);
+    }
+
+    function renderPersonV2(name, timeline, container) {
+        const block = document.createElement('div');
+        block.className = 'result-block';
+        block.innerHTML = `<div class="person-name">${name}</div>`;
+
+        const periodGroups = new Map();
+        timeline.forEach(item => {
+            const pStart = item.periodStart, pEnd = item.periodEnd;
+            const periodKey = `${pStart.getTime()}-${pEnd.getTime()}`;
+
+            if (!periodGroups.has(periodKey)) {
+                periodGroups.set(periodKey, { startDate: pStart, endDate: pEnd, daysMap: new Map() });
+            }
+            const g = periodGroups.get(periodKey);
+            g.daysMap.set(fmtBRDate(item.data), (item.times || []).slice());
+        });
+
+        Array.from(periodGroups.values()).sort((a, b) => a.startDate - b.startDate).forEach(g => {
+            const weeks = buildWeeksForPeriodV2(g.startDate, g.endDate);
+            const periodName = `Período: ${fmtBRDate(g.startDate)} a ${fmtBRDate(g.endDate)}`;
+
+            const card = document.createElement('div');
+            card.className = 'month-card';
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `<div><div class="month-label">${periodName}</div><div class="month-meta"></div></div>`;
+            card.appendChild(header);
+
+            const weeksWrap = document.createElement('div');
+            weeksWrap.className = 'weeks';
+
+            weeks.forEach(w => {
+                if (!w.days.length) return;
+                const start = w.days[0], end = w.days[w.days.length - 1];
+                
+                const weekBox = document.createElement('div');
+                weekBox.className = 'week';
+                const weekHead = document.createElement('div');
+                weekHead.className = 'weekhead';
+                weekHead.innerHTML = `<div class="weektitle">Semana ${fmtBRDate(start)} a ${fmtBRDate(end)}</div>`;
+                
+                const btn = document.createElement('button');
+                btn.className = 'btn-copy'; btn.textContent = 'Copiar semana';
+                const tsv = toTSVForWeek(w.days, g.daysMap);
+                btn.addEventListener('click', async () => {
+                    await copyToClipboard(tsv);
+                    const old = btn.textContent; btn.textContent = 'Copiado!'; btn.classList.add('copied');
+                    setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 2000);
+                });
+                weekHead.appendChild(btn);
+
+                const table = document.createElement('table');
+                table.className = 'tbl';
+                const tbody = document.createElement('tbody');
+
+                let maxCols = 0;
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    const len = times.length % 2 === 0 ? times.length : times.length + 1;
+                    maxCols = Math.max(maxCols, len);
+                });
+
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    if (times.length % 2 !== 0) times.push("");
+                    while (times.length < maxCols) times.push("");
+                    const tr = document.createElement('tr');
+                    times.forEach(t => { const td = document.createElement('td'); td.textContent = t || ""; tr.appendChild(td); });
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody); weekBox.appendChild(weekHead); weekBox.appendChild(table); weeksWrap.appendChild(weekBox);
+            });
+            card.appendChild(weeksWrap); block.appendChild(card);
+        });
+        container.appendChild(block);
+    }
+</script>
+
+</body>
+</html>

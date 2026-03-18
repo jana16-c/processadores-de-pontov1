@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Processador de ponto — Fertran (Com Espera)</title>
+
+<style>
+  :root{
+    --bg:#0b1220;
+    --card:#0f1a2e;
+    --muted:#8aa0c2;
+    --text:#e7eefc;
+    --line:rgba(255,255,255,.10);
+    --blue:#4aa3ff;
+    --blue2:#2b6bff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+    color:var(--text);
+  }
+  header{
+    max-width:1100px;
+    margin:28px auto 10px;
+    padding:0 18px;
+  }
+  
+  /* Cabeçalho e Botão Seletor */
+  .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+  h1{margin:0; font-size:22px; letter-spacing:.2px; transition: 0.3s;}
+  
+  .mode-switch {
+      display: flex;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px;
+  }
+  .mode-switch input[type="radio"] { display: none; }
+  .mode-switch label {
+      padding: 8px 16px; margin: 0; cursor: pointer; border-radius: 6px;
+      font-size: 13px; font-weight: 600; color: var(--muted); transition: 0.2s;
+      user-select: none;
+  }
+  .mode-switch input[type="radio"]:checked + label {
+      background: rgba(74, 163, 255, 0.15);
+      color: var(--blue);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+
+  .sub{color:var(--muted);font-size:13px;line-height:1.35}
+  .wrap{max-width:1100px;margin:10px auto 48px;padding:0 18px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .section{padding:16px 16px 14px;border-top:1px solid var(--line)}
+  .section:first-child{border-top:none}
+  label{display:block;color:var(--muted);font-size:12px;margin:10px 0 6px}
+  textarea{
+    width:100%;
+    min-height:170px;
+    resize:vertical;
+    padding:12px 12px;
+    border-radius:12px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,.18);
+    color:var(--text);
+    outline:none;
+    line-height:1.35;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size:12.5px;
+  }
+  textarea:focus{border-color:rgba(74,163,255,.55); box-shadow: 0 0 0 3px rgba(74,163,255,.14)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background: rgba(74,163,255,.12);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .btn:hover{transform:translateY(-1px); border-color:rgba(74,163,255,.55)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .secondary{background: rgba(255,255,255,.06)}
+  .danger{background: rgba(255,80,80,.12)}
+  .status{color:var(--muted);font-size:12px;white-space:pre-wrap}
+  .loader{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);
+    border-top-color: var(--blue);
+    animation:spin .75s linear infinite;
+    display:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(74,163,255,.35);
+    background: rgba(74,163,255,.12);
+    font-size:12px;
+    font-weight:700;
+    display:none;
+  }
+  .smallhint{color:var(--muted);font-size:12px;margin-top:6px}
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+  @media(min-width:920px){
+    .grid{grid-template-columns: 1fr 1fr}
+  }
+  .out{padding:0}
+  .person{
+    border-top:1px solid var(--line);
+    padding:14px 16px;
+  }
+  .person:first-child{border-top:none}
+  .person h2{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+  .ref{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .refhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(0,0,0,.16);
+    border-bottom:1px solid var(--line);
+  }
+  .refhead .meta{color:var(--muted);font-size:12px}
+  .weeks{padding:10px 12px}
+  .week{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .week:last-child{margin-bottom:0}
+  .weekhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom:1px solid var(--line);
+  }
+  .weektitle{font-weight:800;font-size:13px}
+  .tbl{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  .tbl th,.tbl td{
+    border-bottom:1px solid rgba(255,255,255,.07);
+    padding:8px 10px;
+    vertical-align:top;
+  }
+  .tbl th{color:var(--muted);font-weight:700;text-align:left;background:rgba(0,0,0,.10)}
+  .tbl tr:last-child td{border-bottom:none}
+  .nowrap{white-space:nowrap}
+  .muted{color:var(--muted)}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-content">
+      <h1 id="main-title">Processador de ponto - Fertran (Com Espera)</h1>
+      <div class="mode-switch">
+          <input type="radio" id="mode-v1" name="mode" value="com_espera" checked onchange="updateMode()">
+          <label for="mode-v1">Com Espera</label>
+          
+          <input type="radio" id="mode-v2" name="mode" value="sem_espera" onchange="updateMode()">
+          <label for="mode-v2">Sem Espera</label>
+      </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="section">
+      <div class="grid">
+        <div>
+          <label style="margin-top:0;">Cole aqui o espelho de ponto copiado:</label>
+          <textarea id="raw" placeholder=></textarea>
+        
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" id="btnProcess" type="button">Processar texto</button>
+            <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
+            <div class="loader" id="loader"></div>
+            <div class="pill" id="pillReady">Pronto!</div>
+            <div class="status" id="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section out" id="out"></div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const elRaw = $("raw");
+const elStatus = $("status");
+const elLoader = $("loader");
+const elPillReady = $("pillReady");
+const elOut = $("out");
+const btnProcess = $("btnProcess");
+const btnClear = $("btnClear");
+
+function updateMode() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const titleEl = document.getElementById('main-title');
+    if (mode === 'com_espera') {
+        titleEl.textContent = 'Processador de ponto - Fertran (Com Espera)';
+        document.title = 'Processador de ponto — Fertran (Com Espera)';
+    } else {
+        titleEl.textContent = 'Processador de ponto - Fertran (Sem Espera)';
+        document.title = 'Processador de ponto — Fertran (Sem Espera)';
+    }
+}
+
+function setStatus(msg){ elStatus.textContent = msg || ""; }
+function setLoading(on){
+  elLoader.style.display = on ? "inline-block" : "none";
+  btnProcess.disabled = on;
+}
+function flashReady(){
+  elPillReady.style.display = "inline-block";
+  setTimeout(()=>{ elPillReady.style.display = "none"; }, 2500);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+function normalizeSpaces(s){
+  return (s||"").replace(/\r\n/g,"\n").replace(/\r/g,"\n").replace(/[\t\f\v]+/g," ").replace(/ +/g," ");
+}
+
+function onlyHHMM(hhmmss){
+  const m = /^([0-9]{2}):([0-9]{2})/.exec(hhmmss || "");
+  return m ? `${m[1]}:${m[2]}` : "";
+}
+
+function parseBRDate(dmy){
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dmy);
+  if(!m) return null;
+  const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10);
+  return new Date(yy, mm, dd);
+}
+
+function fmtBRDate(dt){
+  const dd = String(dt.getDate()).padStart(2,"0");
+  const mm = String(dt.getMonth()+1).padStart(2,"0");
+  const yy = dt.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function addDays(dt, n){
+  const d = new Date(dt.getTime());
+  d.setDate(d.getDate()+n);
+  return d;
+}
+
+function mondayOf(dt){
+  const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  const day = d.getDay(); 
+  const diff = (day === 0 ? -6 : 1 - day); 
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function isNextDay(d1, d2){
+  const a = parseBRDate(d1), b = parseBRDate(d2);
+  if(!a || !b) return false;
+  const diff = Math.round((b - a) / 86400000);
+  return diff === 1;
+}
+
+function toMinutes(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return null;
+  return parseInt(m[1],10)*60 + parseInt(m[2],10);
+}
+
+function add24(hhmm){
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  if(!m) return hhmm;
+  const hh = parseInt(m[1],10) + 24;
+  return `${String(hh).padStart(2,"0")}:${m[2]}`;
+}
+
+function suppressDuplicateTimesInDay(arr){
+  if(!Array.isArray(arr) || arr.length < 2) return arr || [];
+  const out = arr.slice();
+  for(let i=0;i<out.length-1;){
+    if(out[i] && out[i] === out[i+1]){
+      out.splice(i, 2);
+      if(i>0) i--; 
+    }else{
+      i++;
+    }
+  }
+  for(let i=1;i<out.length;){
+    if(out[i] === out[i-1]) out.splice(i,1);
+    else i++;
+  }
+  return out;
+}
+
+function splitByPeriods(text){
+  const re = /Per[ií]odo:\s*(\d{2}\/\d{2}\/\d{4})(?:\s+\d{2}:\d{2}:\d{2})?\s*(?:à|-)\s*(\d{2}\/\d{2}\/\d{4})(?:\s+\d{2}:\d{2}:\d{2})?/gi;
+  const matches = [];
+  let m;
+  while((m = re.exec(text)) !== null){
+    matches.push({ idx: m.index, start: m[1], end: m[2] });
+  }
+  const sections = [];
+  for(let i=0;i<matches.length;i++){
+    const a = matches[i];
+    const b = matches[i+1];
+    const slice = text.slice(a.idx, b ? b.idx : text.length);
+    sections.push({ periodStart: a.start, periodEnd: a.end, slice });
+  }
+  
+  if(!sections.length){
+    const dtRe = /\d{2}\/\d{2}\/\d{4}/g;
+    const dates = [];
+    let d;
+    while((d = dtRe.exec(text)) !== null) dates.push(d[0]);
+    const start = dates[0] || "01/01/2000";
+    const end   = dates[dates.length-1] || start;
+    sections.push({ periodStart: start, periodEnd: end, slice: text });
+  }
+  return sections;
+}
+
+function extractEmployeeName(slice){
+  const re = /Funcion[aá]rio(?:\s*\/\s*Motorista)?\s*:\s*([\s\S]+?)(?:\s*CPF\s*:|$)/mi;
+  const m = re.exec(slice);
+  if(m){
+    let raw = m[1].replace(/\r/g,"").trim();
+    raw = raw.replace(/\n\s*\n[\s\S]*/,"").replace(/\s*\d{11}\s*.*/,"");
+    return raw.replace(/\n+/g," ").replace(/\s+/g," ").trim();
+  }
+  return "FUNCIONÁRIO";
+}
+
+function cleanSliceForParsing(s){
+  return s
+    .replace(/Pagina\s+\d+\s+de\s+\d+/gi, "")
+    .replace(/Documento\s+assinado\s+eletronicamente[^\n]*/gi, "")
+    .replace(/Fls\.?:\s*\d+/gi, "");
+}
+
+function extractJourneys(slice, periodStart, periodEnd){
+  const clean = cleanSliceForParsing(slice);
+  const collapsed = clean.replace(
+    /(\d{2}\/\d{2}\/\d{4})\s*\n\s*(\d{2}:\d{2}:\d{2})/g,
+    "$1 $2"
+  );
+
+  const out = [];
+  const funcRe = /Função:?\s*([^\n\r]+?)\s+(?:Macro\s+Mensagem:|Tipo)\s*:?\s*([^\n\r]+)/g;
+
+  const pStart = parseBRDate(periodStart);
+  const pEnd = parseBRDate(periodEnd);
+  const rangeStart = pStart ? addDays(pStart, -35) : null;
+  const rangeEnd = pEnd ? addDays(pEnd, 35) : null;
+
+  let m;
+  while((m = funcRe.exec(collapsed)) !== null){
+    const func = (m[1]||"").trim();
+    const msg  = (m[2]||"").trim();
+
+    const idx = m.index;
+    const back = collapsed.slice(Math.max(0, idx - 1200), idx);
+
+    const dtRe = /(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})/g;
+    const pairs = [];
+    let d;
+    while((d = dtRe.exec(back)) !== null){
+      pairs.push({ date: d[1], time: d[2], idx: d.index });
+    }
+    if(pairs.length < 2) continue;
+
+    let usePairs = pairs;
+    if(rangeStart && rangeEnd){
+      const filtered = pairs.filter(p=>{
+        const dt = parseBRDate(p.date);
+        return dt && dt >= rangeStart && dt <= rangeEnd;
+      });
+      if(filtered.length >= 2) usePairs = filtered;
+    }
+
+    const nearPairs = usePairs.filter(p => (back.length - p.idx) < 600);
+    if(nearPairs.length >= 2) usePairs = nearPairs;
+
+    const start = usePairs[usePairs.length - 2];
+    const end   = usePairs[usePairs.length - 1];
+
+    out.push({
+      startDate: start.date, startTime: start.time,
+      endDate: end.date, endTime: end.time,
+      func, msg
+    });
+  }
+  return out;
+}
+
+// ==========================================
+// MOTOR 1: COM ESPERA NA JORNADA
+// ==========================================
+function buildDataModelComEspera(rawText){
+  const text = normalizeSpaces(rawText).replace(/\n\s+\n/g,"\n\n");
+  const sections = splitByPeriods(text);
+  const persons = new Map();
+
+  for(const sec of sections){
+    const name = extractEmployeeName(sec.slice);
+    const periodStart = sec.periodStart;
+    const periodEnd = sec.periodEnd;
+
+    if(!persons.has(name)) persons.set(name, new Map());
+    const byRef = persons.get(name);
+
+    function getRefForDate(dateStr){
+      const dt = parseBRDate(dateStr);
+      if(!dt) return null;
+      const rk = `${String(dt.getMonth()+1).padStart(2,"0")}/${dt.getFullYear()}`;
+      if(!byRef.has(rk)){
+        const ms = new Date(dt.getFullYear(), dt.getMonth(), 1);
+        const me = new Date(dt.getFullYear(), dt.getMonth()+1, 0);
+        byRef.set(rk, { refKey: rk, periodStart: fmtBRDate(ms), periodEnd: fmtBRDate(me), days: new Map() });
+      }
+      return byRef.get(rk);
+    }
+
+    const journeys = extractJourneys(sec.slice, periodStart, periodEnd);
+    for(const j of journeys){
+      
+      const isJornada = /Jornada\s+de\s+Trabalho/i.test(j.func);
+      const isEsperaWithinJornada = isJornada && /INICIO\s+DE\s+ESPERA/i.test(j.msg);
+      const isEspera  = /Espera/i.test(j.func) || isEsperaWithinJornada;
+
+      if(!isJornada && !isEspera) continue;
+
+      const inHHMM = onlyHHMM(j.startTime);
+      let outHHMM = onlyHHMM(j.endTime);
+
+      if(isJornada && j.startDate !== j.endDate && isNextDay(j.startDate, j.endDate)){
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null && b < a){
+          outHHMM = add24(outHHMM);
+        }
+      }
+
+      const MAX_PAIR_MIN = 14 * 60;
+      {
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null){
+          let dur = b - a;
+          const crossesDay = (String(j.startDate||"") !== String(j.endDate||""));
+          if(dur < 0) dur += 24*60;
+          if(crossesDay && dur > MAX_PAIR_MIN) continue;
+        }
+      }
+
+      const refObj = getRefForDate(j.startDate);
+      if(!refObj) continue;
+
+      const key = j.startDate;
+      if(!refObj.days.has(key)) refObj.days.set(key, []);
+      const arr = refObj.days.get(key);
+
+      if(isJornada && !isEsperaWithinJornada){
+        if(inHHMM) arr.push(inHHMM);
+        if(outHHMM) arr.push(outHHMM);
+      }
+
+      if(isEspera && arr.length >= 2){
+        const lastIndex = arr.length - 1;
+        const lastOut = arr[lastIndex];
+        if(lastOut === inHHMM){
+          arr[lastIndex] = outHHMM;
+        }
+      }
+    }
+
+    for(const refObj of byRef.values()){
+      for(const [d, arr] of refObj.days.entries()){
+        if(!arr || arr.length < 2) continue;
+        for(let i=0; i < arr.length - 1; ){
+          if(arr[i] && arr[i] === arr[i+1]){ arr.splice(i, 2); }
+          else { i++; }
+        }
+        refObj.days.set(d, arr);
+      }
+      for(const [d, arr] of refObj.days.entries()){
+        if(arr && arr.length === 2 && arr[0] === arr[1]){ refObj.days.set(d, []); }
+      }
+    }
+  }
+
+  const result = [];
+  for(const [name, refsMap] of persons.entries()){
+    const refs = [];
+    for(const [refKey, obj] of refsMap.entries()){
+      refs.push(obj);
+    }
+    refs.sort((a,b)=>{
+      const pa = /^(\d{2})\/(\d{4})$/.exec(a.refKey||"");
+      const pb = /^(\d{2})\/(\d{4})$/.exec(b.refKey||"");
+      const ya = pa ? parseInt(pa[2],10) : 9999;
+      const yb = pb ? parseInt(pb[2],10) : 9999;
+      const ma = pa ? parseInt(pa[1],10) : 99;
+      const mb = pb ? parseInt(pb[1],10) : 99;
+      if(ya !== yb) return ya - yb;
+      return ma - mb;
+    });
+    result.push({ name, refs });
+  }
+  result.sort((a,b)=> a.name.localeCompare(b.name));
+  return result;
+}
+
+// ==========================================
+// MOTOR 2: SEM ESPERA NA JORNADA
+// ==========================================
+function buildDataModelSemEspera(rawText){
+  const text = normalizeSpaces(rawText).replace(/\n\s+\n/g,"\n\n");
+  const sections = splitByPeriods(text);
+  const persons = new Map();
+
+  for(const sec of sections){
+    const name = extractEmployeeName(sec.slice);
+    const periodStart = sec.periodStart;
+    const periodEnd = sec.periodEnd;
+
+    if(!persons.has(name)) persons.set(name, new Map());
+    const byRef = persons.get(name);
+
+    function getRefForDate(dateStr){
+      const dt = parseBRDate(dateStr);
+      if(!dt) return null;
+      const rk = `${String(dt.getMonth()+1).padStart(2,"0")}/${dt.getFullYear()}`;
+      if(!byRef.has(rk)){
+        const ms = new Date(dt.getFullYear(), dt.getMonth(), 1);
+        const me = new Date(dt.getFullYear(), dt.getMonth()+1, 0);
+        byRef.set(rk, { refKey: rk, periodStart: fmtBRDate(ms), periodEnd: fmtBRDate(me), days: new Map() });
+      }
+      return byRef.get(rk);
+    }
+
+    const journeys = extractJourneys(sec.slice, periodStart, periodEnd);
+    for(const j of journeys){
+      const isJornada = /Jornada\s+de\s+Trabalho/i.test(j.func);
+      if(!isJornada) continue;
+
+      const inHHMM = onlyHHMM(j.startTime);
+      let outHHMM = onlyHHMM(j.endTime);
+
+      if(j.startDate !== j.endDate && isNextDay(j.startDate, j.endDate)){
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null && b < a){
+          outHHMM = add24(outHHMM); 
+        }
+      }
+
+      const MAX_PAIR_MIN = 14 * 60; 
+      {
+        const a = toMinutes(inHHMM);
+        const b = toMinutes(outHHMM);
+        if(a != null && b != null){
+          let dur = b - a;
+          const crossesDay = (String(j.startDate||"") !== String(j.endDate||""));
+          if(dur < 0) dur += 24*60;
+          if(crossesDay && dur > MAX_PAIR_MIN){
+            continue; 
+          }
+        }
+      }
+
+      const refObj = getRefForDate(j.startDate);
+      if(!refObj) continue;
+
+      const key = j.startDate;
+      if(!refObj.days.has(key)) refObj.days.set(key, []);
+      const arr = refObj.days.get(key);
+      if(inHHMM) arr.push(inHHMM);
+      if(outHHMM) arr.push(outHHMM);
+    }
+
+    for(const refObj of byRef.values()){
+      for(const [d, arr] of refObj.days.entries()){
+        refObj.days.set(d, suppressDuplicateTimesInDay(arr));
+      }
+      for(const [d, arr] of refObj.days.entries()){
+        if(arr && arr.length === 2 && arr[0] === arr[1]){ refObj.days.set(d, []); }
+      }
+    }
+  }
+
+  const result = [];
+  for(const [name, refsMap] of persons.entries()){
+    const refs = [];
+    for(const [refKey, obj] of refsMap.entries()){
+      refs.push(obj);
+    }
+    refs.sort((a,b)=>{
+      const pa = /^(\d{2})\/(\d{4})$/.exec(a.refKey||"");
+      const pb = /^(\d{2})\/(\d{4})$/.exec(b.refKey||"");
+      const ya = pa ? parseInt(pa[2],10) : 9999;
+      const yb = pb ? parseInt(pb[2],10) : 9999;
+      const ma = pa ? parseInt(pa[1],10) : 99;
+      const mb = pb ? parseInt(pb[1],10) : 99;
+      if(ya !== yb) return ya - yb;
+      return ma - mb;
+    });
+    result.push({ name, refs });
+  }
+  result.sort((a,b)=> a.name.localeCompare(b.name));
+  return result;
+}
+
+// ==========================================
+// RENDERIZAÇÃO E TABELAS
+// ==========================================
+function buildWeeks(periodStart, periodEnd){
+  const endDt = parseBRDate(periodEnd);
+  if(!endDt) return [];
+
+  const year  = endDt.getFullYear();
+  const month = endDt.getMonth(); 
+  const firstDay = new Date(year, month, 1);
+  const lastDay  = new Date(year, month + 1, 0); 
+
+  const all = [];
+  for(let d = new Date(firstDay.getTime()); d <= lastDay; d = addDays(d,1)){
+    all.push(new Date(d.getTime()));
+  }
+  if(!all.length) return [];
+
+  const weeks = new Map();
+  for(const d of all){
+    const mon = mondayOf(d);
+    const k = mon.toISOString().slice(0,10);
+    if(!weeks.has(k)) weeks.set(k, { mon, days: [] });
+  }
+
+  for(const w of weeks.values()){
+    const days = [];
+    for(let i=0;i<7;i++){
+      const day = addDays(w.mon, i);
+      if(day.getMonth() === month && day.getFullYear() === year){
+        days.push(day);
+      }
+    }
+    w.days = days;
+  }
+  return Array.from(weeks.values()).sort((a,b)=> a.mon - b.mon);
+}
+
+function fmtExcelTime(hhmm){
+  return (hhmm||"");
+}
+
+function toTSVForWeek(weekDays, inRangeFn, dayToTimes, weekLabel){
+  let maxCols = 0;
+  const rows = [];
+
+  for(const d of weekDays){
+    if(!inRangeFn(d)) continue;
+    const k = fmtBRDate(d);
+    const times = (dayToTimes.get(k) || []).slice();
+    if(times.length % 2 === 1) times.push("");
+    maxCols = Math.max(maxCols, times.length);
+    rows.push({ times });
+  }
+
+  const lines = [];
+  if(weekLabel){
+    lines.push(["Semana", weekLabel].join("\t"));
+  }
+
+  for(const r of rows){
+    const line = [];
+    for(let i=0;i<maxCols;i++){
+      line.push(fmtExcelTime(r.times[i] || ""));
+    }
+    lines.push(line.join("\t"));
+  }
+  return lines.join("\n");
+}
+
+function render(model){
+  elOut.innerHTML = "";
+  if(!model.length){
+    elOut.innerHTML = `<div class="section"><div class="muted">Nenhuma batida encontrada. Verifique se o texto contém registros no formato “Função Jornada de Trabalho Tipo ...”.</div></div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  for(const person of model){
+    const wrap = document.createElement("div");
+    wrap.className = "person";
+    wrap.innerHTML = `<h2>${escapeHtml(person.name)}</h2>`;
+
+    for(const ref of person.refs){
+      const refBox = document.createElement("div");
+      refBox.className = "ref";
+
+      const weeks = buildWeeks(ref.periodStart, ref.periodEnd);
+      const endDt = parseBRDate(ref.periodEnd);
+      const monthStart = endDt ? new Date(endDt.getFullYear(), endDt.getMonth(), 1) : null;
+      const monthEnd   = endDt ? new Date(endDt.getFullYear(), endDt.getMonth()+1, 0) : null;
+      const inRangeFn = (d)=> (monthStart && monthEnd && d>=monthStart && d<=monthEnd);
+
+      const refHead = document.createElement("div");
+      refHead.className = "refhead";
+      refHead.innerHTML = `
+        <div>
+          <div style="font-weight:800;">Referência: ${escapeHtml(ref.refKey)}</div>
+          <div class="meta">Período do relatório: ${escapeHtml(ref.periodStart)} → ${escapeHtml(ref.periodEnd)}</div>
+        </div>
+        <div class="meta">Semanas: ${weeks.filter(w=>w.days.length>0).length}</div>
+      `;
+      refBox.appendChild(refHead);
+
+      const weeksWrap = document.createElement("div");
+      weeksWrap.className = "weeks";
+
+      for(const w of weeks){
+        const visDays = w.days; 
+        if(!visDays.length) continue;
+
+        const wk = document.createElement("div");
+        wk.className = "week";
+
+        const vStart = visDays[0];
+        const vEnd = visDays[visDays.length-1];
+        const title = `Semana ${fmtBRDate(vStart)} a ${fmtBRDate(vEnd)}`;
+
+        const tsvCopy = toTSVForWeek(visDays, ()=>true, ref.days, null);
+
+        const head = document.createElement("div");
+        head.className = "weekhead";
+        head.innerHTML = `
+          <div class="weektitle">${escapeHtml(title)}</div>
+          <button class="btn secondary" type="button">Copiar semana</button>
+        `;
+        const btn = head.querySelector("button");
+        btn.addEventListener("click", async ()=>{
+          await copyToClipboard(tsvCopy);
+          setStatus("Copiado para a área de transferência (TSV com TAB). Cole direto no Excel.");
+          const old = btn.textContent;
+          btn.textContent = "Copiado";
+          btn.disabled = true;
+          window.setTimeout(()=>{
+            btn.textContent = old;
+            btn.disabled = false;
+          }, 2500);
+        });
+
+        const table = document.createElement("table");
+        table.className = "tbl";
+
+        let maxCols = 0;
+        for(const d of visDays){
+          const times = (ref.days.get(fmtBRDate(d)) || []);
+          maxCols = Math.max(maxCols, times.length + (times.length%2));
+        }
+
+        const tbody = document.createElement("tbody");
+
+        for(const d of visDays){ 
+          const dk = fmtBRDate(d);
+          const times = (ref.days.get(dk) || []).slice();
+          if(times.length % 2 === 1) times.push("");
+
+          const tr = document.createElement("tr");
+          for(let i=0;i<maxCols;i++){
+            const td = document.createElement("td");
+            td.className = "mono";
+            td.textContent = fmtExcelTime(times[i] || "");
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        wk.appendChild(head);
+        wk.appendChild(table);
+        weeksWrap.appendChild(wk);
+      }
+
+      refBox.appendChild(weeksWrap);
+      wrap.appendChild(refBox);
+    }
+
+    frag.appendChild(wrap);
+  }
+
+  elOut.appendChild(frag);
+}
+
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+async function copyToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+}
+
+function simulateProgress(msTotal=900){
+  let pct = 0;
+  const start = performance.now();
+  return new Promise(resolve=>{
+    function tick(){
+      const t = performance.now() - start;
+      pct = Math.min(99, Math.floor((t/msTotal)*100));
+      setStatus(`Carregando... ${pct}%`);
+      if(t >= msTotal) return resolve();
+      requestAnimationFrame(tick);
+    }
+    tick();
+  });
+}
+
+btnProcess.addEventListener("click", async ()=>{
+  const raw = (elRaw.value||"").trim();
+  if(!raw){
+    setStatus();
+    return;
+  }
+
+  setLoading(true);
+  elOut.innerHTML = "";
+  setStatus("Carregando... 0%");
+
+  await simulateProgress(800);
+
+  let model = [];
+  const mode = document.querySelector('input[name="mode"]:checked').value;
+  
+  try{
+    if(mode === 'com_espera') {
+        model = buildDataModelComEspera(raw);
+    } else {
+        model = buildDataModelSemEspera(raw);
+    }
+  }catch(err){
+    console.error(err);
+    setStatus("Não consegui interpretar o texto. Verifique o formato do PDF.");
+    setLoading(false);
+    return;
+  }
+
+  setStatus("Carregando... 100%");
+  render(model);
+  setLoading(false);
+  flashReady();
+  setStatus();
+});
+
+btnClear.addEventListener("click", ()=>{
+  elRaw.value = "";
+  elOut.innerHTML = "";
+  setStatus("");
+});
+
+</script>
+</body>
+</html>

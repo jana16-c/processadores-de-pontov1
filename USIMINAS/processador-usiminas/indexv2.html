@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Processador de ponto — Usiminas</title>
+
+    <style>
+        :root{
+            --bg:#0b1220;
+            --card:#0f1a2e;
+            --muted:#8aa0c2;
+            --text:#e7eefc;
+            --line:rgba(255,255,255,.10);
+            --blue:#4aa3ff;
+            --danger-bg:rgba(255,80,80,.10);
+            --danger:#fecdd3;
+            --success:#22c55e;
+        }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background:
+                radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+            color:var(--text);
+            padding:28px 18px 48px;
+        }
+
+        .container{
+            width:100%;
+            max-width:1100px;
+            margin:0 auto;
+        }
+
+        header{
+            margin-bottom:18px;
+        }
+
+        h1{
+            margin:0 0 6px;
+            font-size:22px;
+            letter-spacing:.2px;
+        }
+
+        .sub{
+            color:var(--muted);
+            font-size:13px;
+            line-height:1.35;
+        }
+
+        .card{
+            background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+            border:1px solid var(--line);
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 10px 30px rgba(0,0,0,.25);
+        }
+
+        .section{
+            padding:16px;
+            border-top:1px solid var(--line);
+        }
+
+        .section:first-child{
+            border-top:none;
+        }
+
+        label{
+            display:block;
+            color:var(--muted);
+            font-size:12px;
+            margin:0 0 8px;
+        }
+
+        textarea{
+            width:100%;
+            min-height:240px;
+            resize:vertical;
+            padding:12px;
+            border-radius:12px;
+            border:1px solid var(--line);
+            background:rgba(0,0,0,.18);
+            color:var(--text);
+            outline:none;
+            line-height:1.35;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size:12.5px;
+        }
+
+        textarea:focus{
+            border-color:rgba(74,163,255,.55);
+            box-shadow:0 0 0 3px rgba(74,163,255,.14);
+        }
+
+        .row{
+            display:flex;
+            gap:10px;
+            align-items:center;
+            flex-wrap:wrap;
+            margin-top:12px;
+        }
+
+        .btn-main,
+        .btn-copy{
+            appearance:none;
+            border:1px solid var(--line);
+            color:var(--text);
+            padding:10px 12px;
+            border-radius:12px;
+            cursor:pointer;
+            font-weight:600;
+            transition:.15s;
+        }
+
+        .btn-main{
+            background:rgba(74,163,255,.12);
+        }
+
+        .btn-main:hover,
+        .btn-copy:hover{
+            transform:translateY(-1px);
+            border-color:rgba(74,163,255,.55);
+        }
+
+        .btn-copy{
+            background:rgba(255,255,255,.06);
+            font-size:12px;
+        }
+
+        .btn-copy.copied{
+            background:rgba(34,197,94,.18);
+            border-color:rgba(34,197,94,.55);
+        }
+
+        .error-msg{
+            background:var(--danger-bg);
+            color:var(--danger);
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:14px;
+            display:none;
+            font-size:13px;
+            border:1px solid rgba(255,80,80,.18);
+        }
+
+        .result-block{
+            border-top:1px solid var(--line);
+            padding:16px;
+        }
+
+        .result-block:first-child{
+            border-top:none;
+        }
+
+        .person-name{
+            font-size:15px;
+            font-weight:800;
+            margin:0 0 10px;
+        }
+
+        .month-card{
+            margin-top:12px;
+            border:1px solid var(--line);
+            border-radius:14px;
+            overflow:hidden;
+        }
+
+        .card-header{
+            padding:10px 12px;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            background:rgba(0,0,0,.16);
+            border-bottom:1px solid var(--line);
+        }
+
+        .month-label{
+            font-size:13px;
+            font-weight:800;
+            text-transform:capitalize;
+        }
+
+        .month-meta{
+            color:var(--muted);
+            font-size:12px;
+            margin-top:2px;
+        }
+
+        .weeks{
+            padding:10px 12px;
+        }
+
+        .week{
+            border:1px solid var(--line);
+            border-radius:14px;
+            overflow:hidden;
+            margin-bottom:10px;
+        }
+
+        .week:last-child{
+            margin-bottom:0;
+        }
+
+        .weekhead{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:10px;
+            padding:10px 12px;
+            background:rgba(255,255,255,.04);
+            border-bottom:1px solid var(--line);
+        }
+
+        .weektitle{
+            font-weight:800;
+            font-size:13px;
+        }
+
+        .tbl{
+            width:100%;
+            border-collapse:collapse;
+            font-size:12.5px;
+        }
+
+        .tbl td{
+            border-bottom:1px solid rgba(255,255,255,.07);
+            padding:8px 10px;
+            vertical-align:top;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+
+        .tbl tr:last-child td{
+            border-bottom:none;
+        }
+
+        .muted{
+            color:var(--muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Processador de ponto - Usiminas</h1>
+        <div class="sub">
+            
+        </div>
+    </header>
+
+    <div class="card">
+        <div class="section">
+            <div id="error-box" class="error-msg"></div>
+
+            <label>Cole o texto copiado do espelho de ponto aqui :</label>
+            <textarea id="raw-data" placeholder=""></textarea>
+
+            <div class="row">
+                <button id="btn-process" class="btn-main" onclick="processData()">Processar</button>
+            </div>
+        </div>
+
+        <div id="results-area"></div>
+    </div>
+</div>
+
+<script>
+    function processData() {
+        const btn = document.getElementById('btn-process');
+        const originalText = btn.textContent;
+
+        btn.textContent = "Processando...";
+        btn.disabled = true;
+
+        const rawData = document.getElementById('raw-data').value;
+        const output = document.getElementById('results-area');
+        const errBox = document.getElementById('error-box');
+
+        output.innerHTML = '';
+        errBox.style.display = 'none';
+
+        if (!rawData.trim()) {
+            showError("Por favor, cole o texto do PDF.");
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            const dataMap = parseInput(rawData);
+            let found = false;
+
+            Object.keys(dataMap).sort().forEach(name => {
+                let timeline = dataMap[name] || [];
+                if (!timeline.length) return;
+
+                found = true;
+
+                timeline.sort((a, b) => a.data - b.data);
+                timeline = adjustShifts(timeline);
+
+                renderPerson(name, timeline, output);
+            });
+
+            if (!found) {
+                showError("Nenhuma batida de ponto foi encontrada no texto ou a inteligência de datas não pôde formar o calendário.");
+            }
+
+        } catch (e) {
+            console.error(e);
+            showError("Erro ao processar o arquivo.");
+        }
+
+        btn.textContent = "Processado!";
+        btn.classList.add("copied");
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove("copied");
+            btn.disabled = false;
+        }, 2000);
+    }
+
+    function showError(msg) {
+        const box = document.getElementById('error-box');
+        box.innerText = msg;
+        box.style.display = 'block';
+    }
+
+    function toMin(str) {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function fmtBRDate(dt) {
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yy = dt.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+    }
+
+    function addDays(dt, n) {
+        const d = new Date(dt.getTime());
+        d.setDate(d.getDate() + n);
+        return d;
+    }
+
+    function mondayOf(dt) {
+        const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        const day = d.getDay(); 
+        const diff = (day === 0 ? -6 : 1 - day);
+        d.setDate(d.getDate() + diff);
+        return d;
+    }
+
+    const ptDays = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6, 'sáb': 6 };
+
+    function parseInput(text) {
+        const map = {};
+        const normalizedText = text.replace(/\r/g, '').replace(/\u00A0/g, ' ');
+
+        // 1. Identifica o nome global
+        let globalName = "COLABORADOR NÃO IDENTIFICADO";
+        const rgName = /(?:Empregado|Nome|Colaborador|Funcionário|Funcionario)[\.\s]*:\s*([^\n]+)/i;
+        const mGlobalName = normalizedText.match(rgName);
+        if (mGlobalName) {
+            globalName = mGlobalName[1].trim().replace(/^\d+\s*-\s*/, '').trim().toUpperCase();
+        }
+
+        // 2. Extrai todos os períodos que existirem no documento
+        const extractedPeriods = [];
+        const rgPeriodGlobal = /Per[ií]odo.*?\s*(\d{2})\.(\d{2})\.(\d{4})\s+(?:at[eé]|a)\s+(\d{2})\.(\d{2})\.(\d{4})/gi;
+        let mPeriod;
+        while ((mPeriod = rgPeriodGlobal.exec(normalizedText)) !== null) {
+            extractedPeriods.push({
+                startDay: parseInt(mPeriod[1], 10),
+                startMonth: parseInt(mPeriod[2], 10),
+                startYear: parseInt(mPeriod[3], 10),
+                endDay: parseInt(mPeriod[4], 10),
+                endMonth: parseInt(mPeriod[5], 10),
+                endYear: parseInt(mPeriod[6], 10)
+            });
+        }
+
+        // Se o PDF não tiver períodos por algum corte bizarro, tenta gerar pela base de anos do arquivo
+        if (extractedPeriods.length === 0) {
+            const rgYear = /\b(20[1-3][0-9])\b/g;
+            let foundYear = new Date().getFullYear();
+            let mY = rgYear.exec(normalizedText);
+            if(mY) foundYear = parseInt(mY[1], 10);
+            
+            for(let y = foundYear - 1; y <= foundYear + 1; y++){
+                for(let m = 1; m <= 12; m++){
+                    let eM = m + 1; let eY = y;
+                    if(eM > 12){ eM = 1; eY = y + 1; }
+                    extractedPeriods.push({
+                        startDay: 16, startMonth: m, startYear: y,
+                        endDay: 15, endMonth: eM, endYear: eY
+                    });
+                }
+            }
+        }
+
+        // 3. Lê o arquivo e quebra ele em pequenos blocos contínuos de batidas
+        const lines = normalizedText.split('\n');
+        const rgDay = /^\s*(\d{2})\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\b/i;
+        const isLayoutAntigo = /Data\s+Dia\s+Regra/i.test(normalizedText);
+
+        const blocks = [];
+        let currentBlock = [];
+
+        for (const line of lines) {
+            const l = line.trim();
+            if (!l) continue;
+
+            const mDay = l.match(rgDay);
+            if (mDay) {
+                currentBlock.push({
+                    rawLine: l,
+                    day: parseInt(mDay[1], 10),
+                    wdayStr: mDay[2].toLowerCase()
+                });
+            } else {
+                if (currentBlock.length > 0) {
+                    blocks.push(currentBlock);
+                    currentBlock = [];
+                }
+            }
+        }
+        if (currentBlock.length > 0) blocks.push(currentBlock);
+
+        // 4. Inteligência: Cruza os blocos com o calendário para descobrir o mês exato sem depender da ordem do texto
+        if (!map[globalName]) map[globalName] = [];
+
+        for (const block of blocks) {
+            let bestPeriod = null;
+            let maxMatches = -1;
+
+            for (const p of extractedPeriods) {
+                let matchCount = 0;
+
+                for (const punch of block) {
+                    const testMonth = (punch.day >= 16) ? p.startMonth : p.endMonth;
+                    const testYear = (punch.day >= 16) ? p.startYear : p.endYear;
+                    const testDate = new Date(testYear, testMonth - 1, punch.day);
+                    
+                    if (testDate.getDate() === punch.day && testDate.getDay() === ptDays[punch.wdayStr]) {
+                        matchCount++;
+                    }
+                }
+
+                // Considera válido se mais de 80% dos dias do bloco baterem perfeitamente com o calendário daquele mês
+                if (matchCount > block.length * 0.8 && matchCount > maxMatches) {
+                    maxMatches = matchCount;
+                    bestPeriod = p;
+                }
+            }
+
+            if (bestPeriod) {
+                const calibStartObj = new Date(bestPeriod.startYear, bestPeriod.startMonth - 1, bestPeriod.startDay);
+                const calibEndObj = new Date(bestPeriod.endYear, bestPeriod.endMonth - 1, bestPeriod.endDay);
+
+                for (const punch of block) {
+                    const l = punch.rawLine;
+                    const day = punch.day;
+                    const trueMonth = (day >= 16) ? bestPeriod.startMonth : bestPeriod.endMonth;
+                    const trueYear = (day >= 16) ? bestPeriod.startYear : bestPeriod.endYear;
+                    
+                    // Extrai as batidas incluindo aquelas com horas de um dígito (ex: 6:10 vira 06:10)
+const rawTimes = l.match(/\d{1,2}:\d{2}/g) || [];
+const allTimes = rawTimes.map(t => {
+    const [h, m] = t.split(':');
+    return `${h.padStart(2, '0')}:${m}`;
+});
+
+                    if (isLayoutAntigo) {
+                        const temHorarioPlanejado = /^\s*\d{2}\s+(Seg|Ter|Qua|Qui|Sex|Sáb|Sab|Dom)\s+\S+\s+\d{2}:\d{2}\s+\d{2}:\d{2}/i.test(l);
+                        if (temHorarioPlanejado && allTimes.length >= 2) {
+                            realTimes = allTimes.slice(2);
+                        } else {
+                            realTimes = allTimes;
+                        }
+                    } else {
+                        realTimes = allTimes;
+                    }
+
+                    const entryDate = new Date(trueYear, trueMonth - 1, day);
+                    const isOffDay = /FOLGA|DSR|FERIADO|COMP/i.test(l);
+                    
+                    map[globalName].push({
+                        data: entryDate,
+                        times: realTimes,
+                        rawLine: l,
+                        isOffDay: isOffDay,
+                        periodStart: calibStartObj,
+                        periodEnd: calibEndObj
+                    });
+                }
+            }
+        }
+
+        return map;
+    }
+
+    function isNextCalendarDay(a, b) {
+        const d1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+        const d2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+        return (d2 - d1) === 24 * 60 * 60 * 1000;
+    }
+
+    function add24ToTime(hhmm) {
+        const [h, m] = hhmm.split(':').map(Number);
+        return `${h + 24}:${String(m).padStart(2, '0')}`;
+    }
+
+    function adjustShifts(timeline) {
+        timeline.sort((a, b) => a.data - b.data);
+
+        timeline.forEach(day => {
+            day.times = (day.times || []).slice();
+            
+            // Lógica para converter batida noturna na mesma linha
+            let lastMin = -1;
+            for (let j = 0; j < day.times.length; j++) {
+                let currentMin = toMin(day.times[j]);
+                
+                // Se o horário for numericamente menor que o anterior, significa que virou a meia-noite
+                if (currentMin < lastMin) {
+                    day.times[j] = add24ToTime(day.times[j]);
+                    currentMin += 24 * 60; // Atualiza a referência somando 24h
+                }
+                lastMin = currentMin;
+            }
+        });
+
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const today = timeline[i];
+            const tomorrow = timeline[i + 1];
+
+            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
+            if (!today.times.length || !tomorrow.times.length) continue;
+
+            let changed = true;
+
+            while (changed) {
+                changed = false;
+
+                const todayOdd = today.times.length % 2 !== 0;
+                const tomorrowOdd = tomorrow.times.length % 2 !== 0;
+
+                if (!todayOdd || !tomorrow.times.length) break;
+
+                const lastToday = today.times[today.times.length - 1];
+                const firstTomorrow = tomorrow.times[0];
+
+                const lastTodayMin = toMin(lastToday);
+                const firstTomorrowMin = toMin(firstTomorrow);
+
+                if (todayOdd && tomorrowOdd) {
+                    tomorrow.times.shift();
+                    today.times.push(add24ToTime(firstTomorrow));
+                    changed = true;
+                    continue;
+                }
+
+                if (todayOdd && !tomorrowOdd) {
+                    const hoursGap = ((firstTomorrowMin + 24 * 60) - lastTodayMin) / 60;
+                    const looksLikeNightClosure = firstTomorrowMin < lastTodayMin || hoursGap <= 14;
+
+                    if (looksLikeNightClosure) {
+                        tomorrow.times.shift();
+                        today.times.push(add24ToTime(firstTomorrow));
+                        changed = true;
+                        continue;
+                    }
+                }
+            }
+        }
+        return timeline;
+    }
+
+    function buildWeeksForPeriod(startDate, endDate) {
+        const weeks = new Map();
+
+        const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+        for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
+            const mon = mondayOf(d);
+            const key = fmtBRDate(mon); 
+            if (!weeks.has(key)) weeks.set(key, { mon, days: [] });
+        }
+
+        for (const w of weeks.values()) {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(w.mon, i);
+                if (day >= start && day <= end) {
+                    days.push(day);
+                }
+            }
+            w.days = days;
+        }
+
+        return Array.from(weeks.values()).sort((a, b) => a.mon - b.mon);
+    }
+
+    function toTSVForWeek(weekDays, daysMap) {
+        let maxCols = 0;
+        const rows = [];
+
+        weekDays.forEach(d => {
+            const key = fmtBRDate(d);
+            const times = (daysMap.get(key) || []).slice();
+
+            if (times.length % 2 !== 0) times.push("");
+
+            maxCols = Math.max(maxCols, times.length);
+            rows.push(times);
+        });
+
+        return rows.map(times => {
+            const cols = times.slice();
+            while (cols.length < maxCols) cols.push("");
+            return cols.join("\t");
+        }).join("\n");
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (e) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+    }
+
+    function renderPerson(name, timeline, container) {
+        const block = document.createElement('div');
+        block.className = 'result-block';
+        block.innerHTML = `<div class="person-name">${name}</div>`;
+
+        const periodGroups = new Map();
+
+        timeline.forEach(item => {
+            const pStart = item.periodStart;
+            const pEnd = item.periodEnd;
+            const periodKey = `${pStart.getTime()}-${pEnd.getTime()}`;
+
+            if (!periodGroups.has(periodKey)) {
+                periodGroups.set(periodKey, {
+                    startDate: pStart,
+                    endDate: pEnd,
+                    daysMap: new Map()
+                });
+            }
+
+            const g = periodGroups.get(periodKey);
+            const dayKey = fmtBRDate(item.data);
+            const times = (item.times || []).slice(); // Ordenação removida
+            g.daysMap.set(dayKey, times);
+        });
+
+        Array.from(periodGroups.values()).sort((a, b) => a.startDate - b.startDate).forEach(g => {
+            const weeks = buildWeeksForPeriod(g.startDate, g.endDate);
+            const periodName = `Período: ${fmtBRDate(g.startDate)} a ${fmtBRDate(g.endDate)}`;
+
+            const card = document.createElement('div');
+            card.className = 'month-card';
+
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <div>
+                    <div class="month-label">${periodName}</div>
+                    <div class="month-meta"></div>
+                </div>
+            `;
+            card.appendChild(header);
+
+            const weeksWrap = document.createElement('div');
+            weeksWrap.className = 'weeks';
+
+            weeks.forEach(w => {
+                if (!w.days.length) return;
+
+                const start = w.days[0];
+                const end = w.days[w.days.length - 1];
+                const title = `Semana ${fmtBRDate(start)} a ${fmtBRDate(end)}`;
+
+                const weekBox = document.createElement('div');
+                weekBox.className = 'week';
+
+                const weekHead = document.createElement('div');
+                weekHead.className = 'weekhead';
+
+                const weekTitle = document.createElement('div');
+                weekTitle.className = 'weektitle';
+                weekTitle.textContent = title;
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-copy';
+                btn.type = 'button';
+                btn.textContent = 'Copiar semana';
+
+                const tsv = toTSVForWeek(w.days, g.daysMap);
+
+                btn.addEventListener('click', async () => {
+                    await copyToClipboard(tsv);
+                    const old = btn.textContent;
+                    btn.textContent = 'Copiado!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = old;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+
+                weekHead.appendChild(weekTitle);
+                weekHead.appendChild(btn);
+
+                const table = document.createElement('table');
+                table.className = 'tbl';
+
+                const tbody = document.createElement('tbody');
+
+                let maxCols = 0;
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    const len = times.length % 2 === 0 ? times.length : times.length + 1;
+                    maxCols = Math.max(maxCols, len);
+                });
+
+                w.days.forEach(d => {
+                    const key = fmtBRDate(d);
+                    const times = (g.daysMap.get(key) || []).slice();
+
+                    if (times.length % 2 !== 0) times.push("");
+                    while (times.length < maxCols) times.push("");
+
+                    const tr = document.createElement('tr');
+
+                    times.forEach(t => {
+                        const td = document.createElement('td');
+                        td.textContent = t || "";
+                        tr.appendChild(td);
+                    });
+
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                weekBox.appendChild(weekHead);
+                weekBox.appendChild(table);
+                weeksWrap.appendChild(weekBox);
+            });
+
+            card.appendChild(weeksWrap);
+            block.appendChild(card);
+        });
+
+        container.appendChild(block);
+    }
+</script>
+
+</body>
+</html>
