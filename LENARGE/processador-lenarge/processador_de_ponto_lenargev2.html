@@ -298,7 +298,7 @@ function isNextDay(d1, d2){
 }
 
 function toMinutes(hhmm){
-  const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
+  const m = /^(\d{1,3}):(\d{2})$/.exec(hhmm);
   if(!m) return null;
   return parseInt(m[1],10)*60 + parseInt(m[2],10);
 }
@@ -345,22 +345,15 @@ function extractPeriod(text){
 }
 
 function extractDayData(text){
-  // Retorna Map: data → { entry, exit, totalConducao, totalEspera }
-  // Índices no resumo do Início de Viagem (após Hora Inicial):
-  //   times[0] = Hora Inicial (entrada)
-  //   times[1] = Descanso dia Anterior
-  //   times[2] = Total Jornada
-  //   times[3] = Total Condução  ←
-  //   times[4] = Condução Máx Cont
-  //   times[5] = Total Espera    ←
   const result = new Map();
-  // lastTime: último horário de Hora Final visto por dia (fallback para exit)
   const lastTimePerDay = new Map();
+  const firstTimePerDay = new Map();
+  const firstDaySummaryTimes = new Map();
   const lines = text.split('\n');
   let currentDate = null;
 
   for(let i = 0; i < lines.length; i++){
-    const line = normalizeSpaces(lines[i]).trim();
+    let line = normalizeSpaces(lines[i]).trim();
     if(!line || line.length < 5) continue;
 
     let rest = line;
@@ -375,28 +368,48 @@ function extractDayData(text){
 
     if(!date) continue;
 
-    // Remover "*" de ajuste manual
     if(rest.startsWith('* ')) rest = rest.substring(2);
     else if(rest === '*') continue;
 
-    // ── Rastrear último horário de qualquer evento do dia ──
-    // Formato da linha de evento: Placa Evento [Localização] HoraI [HoraF] [Duração] ...
-    // Usamos todos os tokens HH:MM da linha e pegamos o maior como candidato a saída
-    {
-      const allTimes = rest.match(/\b(\d{1,2}):(\d{2})\b/g);
-      if(allTimes && allTimes.length >= 1){
-        // Hora Final costuma ser o segundo horário da linha; se só houver um, usamos ele
-        const candidate = allTimes.length >= 2 ? allTimes[1] : allTimes[0];
-        const candMin = toMinutes(candidate);
-        const prevMin = toMinutes(lastTimePerDay.get(date) || '');
-        if(candMin !== null && (prevMin === null || candMin > prevMin)){
-          lastTimePerDay.set(date, candidate);
+    rest = rest.replace(/(\d{1,2}):(\d{2})\+1d/g, (_, h, m) =>
+      String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m
+    );
+
+    const isInicio = rest.indexOf('Início de Viagem') !== -1;
+    const isFim    = rest.indexOf('Fim de Viagem')    !== -1;
+
+    if (!isInicio && !isFim) {
+      {
+        const allTimes = rest.match(/\b(\d{1,3}):(\d{2})\b/g);
+        if(allTimes && allTimes.length >= 1){
+          const candidate = allTimes.length >= 2 ? allTimes[1] : allTimes[0];
+          const candMin = toMinutes(candidate);
+          const prevMin = toMinutes(lastTimePerDay.get(date) || '');
+          if(candMin !== null && (prevMin === null || candMin > prevMin)){
+            lastTimePerDay.set(date, candidate);
+          }
+        }
+      }
+      {
+        const allTimes = rest.match(/\b(\d{1,3}):(\d{2})\b/g);
+        if(allTimes && allTimes.length >= 1){
+          const candidate = allTimes[0];
+          const candMin = toMinutes(candidate);
+          const prevMin = toMinutes(firstTimePerDay.get(date) || '');
+          if(candMin !== null && (prevMin === null || candMin < prevMin)){
+            firstTimePerDay.set(date, candidate);
+          }
         }
       }
     }
 
-    const isInicio = rest.indexOf('Início de Viagem') !== -1;
-    const isFim    = rest.indexOf('Fim de Viagem')    !== -1;
+    if(dateMatch && !isInicio && !isFim && !firstDaySummaryTimes.has(date)){
+      const summaryTimes = rest.match(/\d{1,3}:\d{2}/g) || [];
+      if(summaryTimes.length >= 8){
+        firstDaySummaryTimes.set(date, summaryTimes);
+      }
+    }
+
     if(!isInicio && !isFim) continue;
 
     const eventName = isInicio ? 'Início de Viagem' : 'Fim de Viagem';
@@ -407,58 +420,78 @@ function extractDayData(text){
 
     rest = rest.substring(eIdx + eventName.length).trim();
 
-    // Converter overflow de 24h: "02:05+1d" → "26:05"
-    rest = rest.replace(/(\d{1,2}):(\d{2})\+1d/g, (_, h, m) =>
-      String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m
-    );
-
     if(!result.has(date)){
       result.set(date, { entry: '', exit: '', totalConducao: '', totalEspera: '' });
     }
     const day = result.get(date);
 
-    // Capturar todos os valores de tempo (inclui horas > 24 como 26:MM, 48:MM)
     const times = rest.match(/\d{1,3}:\d{2}/g) || [];
 
+    // Mantém a trava no Início: Pega sempre o PRIMEIRO Início de Viagem do dia
     if(isInicio && !day.entry){
       day.entry         = times[0] || '';
       day.totalConducao = times[3] || '';
       day.totalEspera   = times[5] || '';
     }
-    if(isFim && !day.exit){
-      day.exit = times[0] || '';
-      // Se saída < entrada em minutos, a viagem cruzou meia-noite → +24h
-      if(day.entry && day.exit){
+    
+    // Remove a trava no Fim: Pega sempre o ÚLTIMO Fim de Viagem (sobrescreve o anterior se houver)
+    if(isFim){ 
+      let currentExit = times[0] || '';
+      if(day.entry && currentExit){
         const entMin = toMinutes(day.entry);
-        const extMin = toMinutes(day.exit);
+        const extMin = toMinutes(currentExit);
         if(entMin !== null && extMin !== null && extMin < entMin){
-          const [h, m] = day.exit.split(':');
-          day.exit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
+          const [h, m] = currentExit.split(':');
+          currentExit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
+        }
+      }
+      day.exit = currentExit;
+    }
+  }
+
+  // Fallbacks para garantir que buracos sejam cobertos
+  for(const [date, day] of result.entries()){
+    const lastStr = lastTimePerDay.get(date) || '';
+    if(lastStr){
+      if(!day.exit){
+        // Se não tem fim nenhum, usa o último evento registrado
+        day.exit = lastStr;
+      } else {
+        // Se tem um "Fim", mas existe evento DEPOIS dele (ex: iniciou segunda viagem e esqueceu o fim)
+        const extMin = toMinutes(day.exit);
+        const lastMin = toMinutes(lastStr);
+        if(extMin !== null && lastMin !== null && lastMin > extMin){
+          day.exit = lastStr;
         }
       }
     }
   }
 
-  // Dias com entrada mas sem Fim de Viagem → usar último horário registrado
-  for(const [date, day] of result.entries()){
-    if(day.entry && !day.exit){
-      const last = lastTimePerDay.get(date) || '';
-      if(last){
-        day.exit = last;
-        // Corrigir cruzamento de meia-noite também no fallback
-        const entMin = toMinutes(day.entry);
-        const extMin = toMinutes(day.exit);
-        if(entMin !== null && extMin !== null && extMin < entMin){
-          const [h, m] = day.exit.split(':');
-          day.exit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
-        }
+  for(const [date,day] of result.entries()){
+    if(day.exit && !day.entry){
+      const first = firstTimePerDay.get(date) || '';
+      if(first){
+        day.entry = first;
       }
+    }
+    const entMin = toMinutes(day.entry);
+    const extMin = toMinutes(day.exit);
+    if(entMin !== null && extMin !== null && extMin < entMin){
+      const [h, m] = day.exit.split(':');
+      day.exit = String(parseInt(h, 10) + 24).padStart(2, '0') + ':' + m;
+    }
+  }
+  
+  for(const [date, day] of result.entries()){
+    if(!day.totalConducao && firstDaySummaryTimes.has(date)){
+      const sTimes = firstDaySummaryTimes.get(date);
+      day.totalConducao = sTimes[5] || '';
+      day.totalEspera   = sTimes[7] || '';
     }
   }
 
   return result;
 }
-
 // ==========================================
 // MOTOR: ENTRADA / SAÍDA / CONDUÇÃO / ESPERA
 // ==========================================
@@ -793,3 +826,4 @@ document.querySelectorAll('input[name="mode"]').forEach(r => {
 </script>
 </body>
 </html>
+
