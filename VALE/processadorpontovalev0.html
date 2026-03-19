@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Processador de Ponto — Vale</title>
+
+    <style>
+        :root{
+            --bg:#0b1220;
+            --card:#0f1a2e;
+            --muted:#8aa0c2;
+            --text:#e7eefc;
+            --line:rgba(255,255,255,.10);
+            --blue:#4aa3ff;
+            --danger-bg:rgba(255,80,80,.10);
+            --danger:#fecdd3;
+            --warning-bg:rgba(245, 158, 11, 0.15);
+            --warning-border:#f59e0b;
+        }
+
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            background:
+                radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+            color:var(--text);
+            padding:28px 18px 48px;
+        }
+
+        .container{ width:100%; max-width:1100px; margin:0 auto; }
+        header{ margin-bottom:18px; }
+        h1{ margin:0 0 6px; font-size:22px; letter-spacing:.2px; }
+        .sub{ color:var(--muted); font-size:13px; line-height:1.35; }
+
+        .card{
+            background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+            border:1px solid var(--line);
+            border-radius:16px;
+            overflow:hidden;
+            box-shadow:0 10px 30px rgba(0,0,0,.25);
+        }
+
+        .section{ padding:16px; border-top:1px solid var(--line); }
+        .section:first-child{ border-top:none; }
+
+        label{ display:block; color:var(--muted); font-size:12px; margin:0 0 8px; }
+
+        textarea{
+            width:100%; min-height:240px; resize:vertical; padding:12px;
+            border-radius:12px; border:1px solid var(--line);
+            background:rgba(0,0,0,.18); color:var(--text); outline:none;
+            line-height:1.35;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size:12.5px;
+        }
+        textarea:focus{ border-color:rgba(74,163,255,.55); box-shadow:0 0 0 3px rgba(74,163,255,.14); }
+
+        .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+
+        .btn-main, .btn-copy{
+            appearance:none; border:1px solid var(--line); color:var(--text);
+            padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600; transition:.15s;
+        }
+        .btn-main{ background:rgba(74,163,255,.12); }
+        .btn-main:hover, .btn-copy:hover{ transform:translateY(-1px); border-color:rgba(74,163,255,.55); }
+        .btn-copy{ background:rgba(255,255,255,.06); font-size:12px; }
+        .btn-copy.copied{ background:rgba(34,197,94,.18); border-color:rgba(34,197,94,.55); }
+
+        .error-msg{
+            background:var(--danger-bg); color:var(--danger); padding:12px;
+            border-radius:10px; margin-bottom:14px; display:none; font-size:13px;
+            border:1px solid rgba(255,80,80,.18);
+        }
+
+        .result-block{ border-top:1px solid var(--line); padding:16px; }
+        .result-block:first-child{ border-top:none; }
+        .person-name{ font-size:15px; font-weight:800; margin:0 0 10px; }
+
+        .month-card{ margin-top:12px; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+        .card-header{
+            padding:10px 12px; display:flex; justify-content:space-between; align-items:center;
+            gap:10px; background:rgba(0,0,0,.16); border-bottom:1px solid var(--line);
+        }
+        .month-label{ font-size:13px; font-weight:800; text-transform:capitalize; }
+        .month-meta{ color:var(--muted); font-size:12px; margin-top:2px; }
+        .weeks{ padding:10px 12px; }
+        .week{ border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:10px; }
+        .week:last-child{ margin-bottom:0; }
+        .weekhead{
+            display:flex; justify-content:space-between; align-items:center; gap:10px;
+            padding:10px 12px; background:rgba(255,255,255,.04); border-bottom:1px solid var(--line);
+        }
+        .weektitle{ font-weight:800; font-size:13px; }
+
+        .tbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
+        .tbl td{
+            border-bottom:1px solid rgba(255,255,255,.07); padding:8px 10px; vertical-align:top;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+        .tbl tr:last-child td{ border-bottom:none; }
+        .muted{ color:var(--muted); }
+        .alert-row{ background: var(--warning-bg) !important; border-left: 3px solid var(--warning-border); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Processador de Ponto - Vale</h1>
+        <div class="sub"></div>
+    </header>
+
+    <div class="card">
+        <div class="section">
+            <div id="error-box" class="error-msg"></div>
+            <label>Cole o espelho de ponto aqui :</label>
+            <textarea id="raw-data" placeholder=""></textarea>
+            
+            <label style="margin-top: 16px;">Intervalo de refeição (HH:MM ou HH,MM) - deixe vazio para não adicionar:</label>
+            <input type="text" id="meal-interval" placeholder="Ex: 01:00 ou 01,00 (1 hora) ou 00:30 ou 00,30 (30 min)" style="width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0,0,0,.18); color: var(--text); outline: none; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size: 12.5px;" />
+            
+            <div class="row">
+                <button id="btn-process" class="btn-main" onclick="processData()">Processar</button>
+            </div>
+        </div>
+        <div id="results-area"></div>
+    </div>
+</div>
+
+<script>
+    function processData() {
+        const btn = document.getElementById('btn-process');
+        const originalText = btn.textContent;
+        btn.textContent = "Processando...";
+        btn.disabled = true;
+
+        const rawData = document.getElementById('raw-data').value;
+        const output = document.getElementById('results-area');
+        const errBox = document.getElementById('error-box');
+        output.innerHTML = '';
+        errBox.style.display = 'none';
+
+        if (!rawData.trim()) {
+            showError("Por favor, cole o texto do PDF.");
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
+        }
+
+        try {
+            const mealIntervalStr = document.getElementById('meal-interval').value;
+            const mealIntervalMin = parseIntervalInput(mealIntervalStr);
+            
+            const dataMap = parseInput(rawData);
+            let found = false;
+            Object.keys(dataMap).sort().forEach(name => {
+                let timeline = dataMap[name] || [];
+                if (!timeline.length) return;
+                found = true;
+                timeline = adjustShifts(timeline);
+                timeline = applyMealIntervalsToTimeline(timeline, mealIntervalMin);
+                renderPerson(name, timeline, output);
+            });
+            if (!found) showError("Nenhum funcionário ou batida foi encontrado no texto.");
+        } catch (e) {
+            console.error(e);
+            showError("Erro ao processar.");
+        }
+
+        btn.textContent = "Processado!";
+        btn.classList.add("copied");
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.classList.remove("copied");
+            btn.disabled = false;
+        }, 2000);
+    }
+
+    function showError(msg) {
+        const box = document.getElementById('error-box');
+        box.innerText = msg;
+        box.style.display = 'block';
+    }
+
+    function fmtBRDate(dt) {
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yy = dt.getFullYear();
+        return `${dd}/${mm}/${yy}`;
+    }
+
+    function addDays(dt, n) {
+        const d = new Date(dt.getTime());
+        d.setDate(d.getDate() + n);
+        return d;
+    }
+
+    function mondayOf(dt) {
+        const d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        const day = d.getDay();
+        const diff = (day === 0 ? -6 : 1 - day);
+        d.setDate(d.getDate() + diff);
+        return d;
+    }
+
+    function parseInput(text) {
+        const map = {};
+        const normalizedText = text.replace(/\r/g, '').replace(/\u00A0/g, ' ');
+        const lines = normalizedText.split('\n');
+
+        let currentName = "COLABORADOR NÃO IDENTIFICADO";
+        let schedules = {};
+        let currentDayObj = null;
+
+        const rgSchedule = /(\d{5})\s*\[(\d{2}:\d{2})\s+as\s+(\d{2}:\d{2})(?:\s+-\s+Int:\s+(\d{2}:\d{2})\s+as\s+(\d{2}:\d{2}))?\]/g;
+        const rgName = /Empregado\s*:\s*(.*?)\s+Categoria/i;
+        const rgDayLine = /^(seg|ter|qua|qui|sex|s[aá]b|dom)\s+(\d{2})\/(\d{2})\/(\d{2})/i;
+
+        for (let i = 0; i < lines.length; i++) {
+            const rawLine = lines[i];
+            const l = rawLine.trim();
+            if (!l) continue;
+
+            let mSch;
+            while ((mSch = rgSchedule.exec(l)) !== null) {
+                const code = mSch[1];
+                const e1 = mSch[2], s2 = mSch[3], s1 = mSch[4], e2 = mSch[5];
+                if (s1 && e2) {
+                    schedules[code] = [e1, s1, e2, s2];
+                } else {
+                    schedules[code] = [e1, s2];
+                }
+            }
+
+            const mName = l.match(rgName);
+            if (mName) {
+                let raw = mName[1].trim().replace(/^\d+\s*-\s*/, '');
+                currentName = raw.toUpperCase();
+                if (!map[currentName]) map[currentName] = [];
+                currentDayObj = null;
+                continue;
+            }
+
+            const hasTag = /MARCA[ÇC][ÃA]O N[ÃA]O REGISTRADA/i.test(l);
+            const isOff = /FOLGA|DSR|FERIADO|LIC DOENCA|FERIAS/i.test(l);
+            const hasIrregular = /MARCA[ÇC][ÃA]O IRREGULAR/i.test(l);
+
+            let hasMissingExit = /s\/Marca[çc][ãa]o de Sa[íi]da/i.test(l);
+            if (/^(seg|ter|qua|qui|sex|s[aá]b|dom)\s+\d{2}\/\d{2}\/\d{2}/i.test(l)) {
+                for (let j = i + 1; j < lines.length; j++) {
+                    let nextL = lines[j].trim();
+                    if (/^(seg|ter|qua|qui|sex|s[aá]b|dom)\s+\d{2}\/\d{2}\/\d{2}/i.test(nextL)) break;
+                    if (/s\/Marca[çc][ãa]o de Sa[íi]da/i.test(nextL)) { hasMissingExit = true; break; }
+                }
+            }
+
+            const mDay = l.match(rgDayLine);
+            if (mDay) {
+                const day = parseInt(mDay[2], 10);
+                const month = parseInt(mDay[3], 10);
+                const year = 2000 + parseInt(mDay[4], 10);
+                const dateObj = new Date(year, month - 1, day);
+                const mCode = l.match(/.{2,4}\s+\d{2}\/\d{2}\/\d{2}\s+(\d{5})/);
+                const schCode = mCode ? mCode[1] : null;
+
+                if (!map[currentName]) map[currentName] = [];
+                let lastDay = map[currentName].length > 0 ? map[currentName][map[currentName].length - 1] : null;
+
+                if (lastDay && lastDay.data.getTime() === dateObj.getTime()) {
+                    currentDayObj = lastDay;
+                    if (schCode && !currentDayObj.scheduleCode) currentDayObj.scheduleCode = schCode;
+                    if (hasTag) currentDayObj.useSchedule = true;
+                    if (isOff) currentDayObj.isOffDay = true;
+                    if (hasIrregular) currentDayObj.hasIrregularMark = true;
+                    if (hasMissingExit) currentDayObj.hasMissingExit = true;
+                } else {
+                    currentDayObj = {
+                        data: dateObj,
+                        scheduleCode: schCode,
+                        rawTimes: [],
+                        useSchedule: hasTag,
+                        isOffDay: isOff,
+                        hasIrregularMark: hasIrregular,
+                        hasMissingExit: hasMissingExit,
+                        stopCapturing: false
+                    };
+                    map[currentName].push(currentDayObj);
+                }
+
+                extractTimesStrict(l, currentDayObj, true, hasIrregular, hasMissingExit, schedules);
+            }
+            else if (currentDayObj && /^\d{1,2}:\d{2}/.test(l)) {
+                if (hasTag) currentDayObj.useSchedule = true;
+                if (isOff) currentDayObj.isOffDay = true;
+                if (hasIrregular) currentDayObj.hasIrregularMark = true;
+                if (hasMissingExit) currentDayObj.hasMissingExit = true;
+
+                // FIX CASO 1: A condição original bloqueava QUALQUER linha com "INTERVALO",
+                // incluindo "INTERVALO_COMPL CARGA SEMANAL" que contém batidas válidas de hora extra.
+                // Corrigido para bloquear apenas "INTERVALO ALIMENT" (intervalo de refeição),
+                // que de fato não deve ter suas batidas capturadas como ponto do turno.
+                if (/Permanencia Fora/i.test(l) && !/INTERVALO[\s_]?ALIMENT/i.test(l)) {
+                    currentDayObj.stopCapturing = false;
+                }
+
+                extractTimesStrict(l, currentDayObj, false, hasIrregular, hasMissingExit, schedules);
+            }
+            else if (currentDayObj) {
+                if (hasTag) currentDayObj.useSchedule = true;
+                if (isOff) currentDayObj.isOffDay = true;
+                if (hasIrregular) currentDayObj.hasIrregularMark = true;
+                if (hasMissingExit) currentDayObj.hasMissingExit = true;
+            }
+        }
+
+        for (let name in map) {
+            for (let day of map[name]) {
+                if (day.useSchedule && day.scheduleCode && schedules[day.scheduleCode]) {
+                    day.times = [...schedules[day.scheduleCode]];
+                } else {
+
+                    if (day.hasMissingExit && day.rawTimes.length % 2 !== 0) {
+                        let plannedExit = null;
+                        if (day.scheduleCode && schedules[day.scheduleCode]) {
+                            let sch = schedules[day.scheduleCode];
+                            if (day.rawTimes.length < sch.length) {
+                                if (sch.length === 4) {
+                                    if (day.rawTimes.length === 1) plannedExit = sch[1];
+                                    else if (day.rawTimes.length === 3) plannedExit = sch[3];
+                                } else if (sch.length === 2) {
+                                    if (day.rawTimes.length === 1) plannedExit = sch[1];
+                                } else {
+                                    plannedExit = sch[sch.length - 1];
+                                }
+                            }
+                        }
+                        if (plannedExit) day.rawTimes.push(plannedExit);
+                    }
+
+                    let pairs = [];
+                    for (let i = 0; i < day.rawTimes.length; i += 2) {
+                        let parseToMins = (tStr) => {
+                            let parts = tStr.split(':');
+                            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                        };
+                        let inMins = parseToMins(day.rawTimes[i]);
+                        let outMins = (i + 1 < day.rawTimes.length) ? parseToMins(day.rawTimes[i + 1]) : null;
+                        if (outMins !== null && outMins < inMins) outMins += 1440;
+                        pairs.push({ in: inMins, out: outMins });
+                    }
+
+                    if (pairs.length > 1) {
+                        let anchor = pairs[0];
+                        for (let i = 1; i < pairs.length; i++) {
+                            let p = pairs[i];
+                            let outVal = p.out !== null ? p.out : p.in;
+                            let gapBefore = anchor.in - outVal;
+                            let gapAfterSameDay = p.in - anchor.out;
+                            let gapAfterNextDay = (p.in + 1440) - anchor.out;
+                            if (gapBefore < 0) gapBefore = Infinity;
+                            if (gapAfterSameDay < 0) gapAfterSameDay = Infinity;
+                            if (gapAfterNextDay < 0) gapAfterNextDay = Infinity;
+                            let minGap = Math.min(gapBefore, gapAfterSameDay, gapAfterNextDay);
+                            if (minGap === gapAfterNextDay) {
+                                p.in += 1440;
+                                if (p.out !== null) p.out += 1440;
+                            }
+                        }
+                    }
+
+                    pairs.sort((a, b) => a.in - b.in);
+
+                    // FIX CASO 2: Quando temos 2 pares onde par[0] começa antes das 12:00
+                    // e par[1] começa após as 12:00, e o fim de par[1] (mod 1440) coincide
+                    // com o início de par[0] (tolerância 60min) e não são adjacentes:
+                    // par[0] é a continuação noturna de par[1] (turno que cruza a meia-noite
+                    // e ficou com .in menor após o sort). Reordenar: par[1] primeiro, par[0]
+                    // com +1440.
+                    // Exemplo: [01:00->07:08, 16:16->25:00] -> [16:16->25:00, 25:00->31:08]
+                    // formata como: 16:16  01:00  01:00  07:08
+                    if (pairs.length === 2) {
+                        let p0 = pairs[0], p1 = pairs[1];
+                        let p1OutMod = p1.out % 1440;
+                        let isP0ContinuationOfP1 = p0.in < 720 && p1.in >= 720
+                            && Math.abs(p1OutMod - p0.in) <= 60;
+                        let areAdjacent = (p0.out === p1.in);
+                        if (isP0ContinuationOfP1 && !areAdjacent) {
+                            p0.in += 1440;
+                            p0.out += 1440;
+                            pairs = [p1, p0];
+                        }
+                    }
+
+                    // FIX CASO 3: Não fazer merge quando ambos os pares têm duração válida
+                    // individualmente. Dois turnos consecutivos (ex: 07:05->19:30 e
+                    // 19:30->06:56) cujo fim/início coincidem são turnos distintos — não
+                    // devem ser fundidos num único par que excederia 840 min.
+                    let mergedPairs = [];
+                    for (let p of pairs) {
+                        if (mergedPairs.length > 0) {
+                            let last = mergedPairs[mergedPairs.length - 1];
+                            if (last.out === p.in) {
+                                last.out = p.out; // Faz o merge incondicionalmente
+                                continue;
+                            }
+                        }
+                        mergedPairs.push(p);
+                    }
+
+                    let finalPairs = [];
+                    for (let p of mergedPairs) {
+                        let dur = p.out !== null ? (p.out - p.in) : 0;
+                        if (dur <= 1440) finalPairs.push(p);
+                    }
+
+                    let formatMins = (mins) => {
+                        let h = Math.floor(mins / 60); // Sem o limitador para permitir 25h, 30h, etc.
+                        let m = mins % 60;
+                        return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                    };
+
+                    day.times = [];
+                    for (let p of finalPairs) {
+                        day.times.push(formatMins(p.in));
+                        if (p.out !== null) day.times.push(formatMins(p.out));
+                    }
+                }
+                delete day.rawTimes;
+            }
+        }
+
+        return map;
+    }
+
+    function extractTimesStrict(line, dayObj, isFirstLine, isIrregularLine, hasMissingExit, schedules) {
+        if (dayObj.stopCapturing) return;
+
+        let restStr = line;
+        if (isFirstLine) {
+            restStr = line.replace(/^(?:seg|ter|qua|qui|sex|s[aá]b|dom)\s+\d{2}\/\d{2}\/\d{2}\s*(?:\d{5})?\s*(?:\w{2,4})?\s*/i, '');
+        }
+
+        const tokens = restStr.split(/\s+/);
+        let capturedThisLine = [];
+        let brokeEarly = false;
+
+        for (let t of tokens) {
+            if (/^\d{1,2}:\d{2}$/.test(t)) {
+                capturedThisLine.push(t.padStart(5, '0'));
+            } else {
+                brokeEarly = true;
+                dayObj.stopCapturing = true;
+                break;
+            }
+        }
+
+        if (isIrregularLine && capturedThisLine.length % 2 !== 0 && capturedThisLine.length > 0) {
+            let first = capturedThisLine[0];
+            let last = capturedThisLine[capturedThisLine.length - 1];
+            let inMins = parseInt(first.split(':')[0], 10) * 60 + parseInt(first.split(':')[1], 10);
+            let outMins = parseInt(last.split(':')[0], 10) * 60 + parseInt(last.split(':')[1], 10);
+            if (outMins < inMins) outMins += 1440;
+            let dur = outMins - inMins;
+            if (dur > 0 && dur <= 840) {
+                capturedThisLine = [first, last];
+            } else {
+                let plannedExit = null;
+                if (dayObj.scheduleCode && schedules && schedules[dayObj.scheduleCode]) {
+                    let sch = schedules[dayObj.scheduleCode];
+                    plannedExit = sch[sch.length - 1];
+                }
+                if (plannedExit) {
+                    capturedThisLine = [first, plannedExit];
+                } else if (!brokeEarly) {
+                    capturedThisLine.pop();
+                }
+            }
+        }
+        else if (capturedThisLine.length % 2 !== 0) {
+            if (!brokeEarly && !hasMissingExit) capturedThisLine.pop();
+        }
+
+        if (!isFirstLine && capturedThisLine.length > 0) {
+            let allExist = capturedThisLine.every(t => dayObj.rawTimes.includes(t));
+            if (allExist) capturedThisLine = [];
+        }
+
+        dayObj.rawTimes.push(...capturedThisLine);
+    }
+
+    function toMin(str) {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function minToTime(minutes) {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function parseIntervalInput(intervalStr) {
+        if (!intervalStr || !intervalStr.trim()) return 0;
+        const normalized = intervalStr.trim().replace(',', ':');
+        const parts = normalized.split(':');
+        if (parts.length === 2) {
+            const h = parseInt(parts[0]) || 0;
+            const m = parseInt(parts[1]) || 0;
+            return h * 60 + m;
+        }
+        return 0;
+    }
+
+    function addMealIntervalTimes(times, intervalMinutes) {
+        if (!intervalMinutes || times.length !== 2) return times;
+
+        const entryMin = toMin(times[0]);
+        const exitMin = toMin(times[1]);
+        const totalDuration = exitMin - entryMin;
+
+        if (totalDuration <= intervalMinutes) return times;
+
+        const workDuration = totalDuration - intervalMinutes;
+        const firstHalfWork = Math.floor(workDuration / 2);
+
+        const exitIntervalMin = entryMin + firstHalfWork;
+        const entryIntervalMin = exitIntervalMin + intervalMinutes;
+
+        return [
+            times[0],
+            minToTime(exitIntervalMin),
+            minToTime(entryIntervalMin),
+            times[1]
+        ];
+    }
+
+    function applyMealIntervalsToTimeline(timeline, intervalMinutes) {
+        if (!intervalMinutes) return timeline;
+
+        return timeline.map(day => ({
+            ...day,
+            times: addMealIntervalTimes(day.times, intervalMinutes)
+        }));
+    }
+
+    function adjustShifts(timeline) {
+        timeline.sort((a, b) => a.data - b.data);
+        return timeline;
+    }
+
+    function buildWeeksForMonth(year, monthIndex) {
+        const firstDay = new Date(year, monthIndex, 1);
+        const lastDay = new Date(year, monthIndex + 1, 0);
+        const weeks = new Map();
+
+        for (let d = new Date(firstDay); d <= lastDay; d = addDays(d, 1)) {
+            const mon = mondayOf(d);
+            const key = mon.toISOString().slice(0, 10);
+            if (!weeks.has(key)) weeks.set(key, { mon, days: [] });
+        }
+
+        for (const w of weeks.values()) {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(w.mon, i);
+                if (day.getFullYear() === year && day.getMonth() === monthIndex) days.push(day);
+            }
+            w.days = days;
+        }
+
+        return Array.from(weeks.values()).sort((a, b) => a.mon - b.mon);
+    }
+
+    function toTSVForWeek(weekDays, daysMap) {
+        let maxCols = 0;
+        const rows = [];
+        weekDays.forEach(d => {
+            const key = fmtBRDate(d);
+            const times = (daysMap.get(key) || []).slice();
+            if (times.length % 2 !== 0) times.push("");
+            maxCols = Math.max(maxCols, times.length);
+            rows.push(times);
+        });
+        return rows.map(times => {
+            const cols = times.slice();
+            while (cols.length < maxCols) cols.push("");
+            return cols.join("\t");
+        }).join("\n");
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (e) {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+        }
+    }
+
+    function renderPerson(name, timeline, container) {
+        const block = document.createElement('div');
+        block.className = 'result-block';
+        block.innerHTML = `<div class="person-name">${name}</div>`;
+
+        const monthGroups = new Map();
+        timeline.forEach(item => {
+            const date = item.data;
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+            if (!monthGroups.has(monthKey)) {
+                monthGroups.set(monthKey, { year, month, daysMap: new Map() });
+            }
+            const g = monthGroups.get(monthKey);
+            const dayKey = fmtBRDate(date);
+            g.daysMap.set(dayKey, item.times || []);
+        });
+
+        Array.from(monthGroups.keys()).sort().forEach(monthKey => {
+            const g = monthGroups.get(monthKey);
+            const weeks = buildWeeksForMonth(g.year, g.month);
+            const monthName = new Date(g.year, g.month, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+            const lastDayOfMonth = new Date(g.year, g.month + 1, 0).getDate();
+
+            const card = document.createElement('div');
+            card.className = 'month-card';
+
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <div>
+                    <div class="month-label">${monthName}</div>
+                    <div class="month-meta">Dias do mês: 01 até ${String(lastDayOfMonth).padStart(2, '0')}</div>
+                </div>
+            `;
+            card.appendChild(header);
+
+            const weeksWrap = document.createElement('div');
+            weeksWrap.className = 'weeks';
+
+            weeks.forEach(w => {
+                if (!w.days.length) return;
+                const start = w.days[0];
+                const end = w.days[w.days.length - 1];
+                const title = `Semana ${fmtBRDate(start)} a ${fmtBRDate(end)}`;
+
+                const weekBox = document.createElement('div');
+                weekBox.className = 'week';
+
+                const weekHead = document.createElement('div');
+                weekHead.className = 'weekhead';
+
+                const weekTitle = document.createElement('div');
+                weekTitle.className = 'weektitle';
+                weekTitle.textContent = title;
+
+                const btn = document.createElement('button');
+                btn.className = 'btn-copy';
+                btn.type = 'button';
+                btn.textContent = 'Copiar semana';
+
+                const tsv = toTSVForWeek(w.days, g.daysMap);
+                btn.addEventListener('click', async () => {
+                    await copyToClipboard(tsv);
+                    const old = btn.textContent;
+                    btn.textContent = 'Copiado!';
+                    btn.classList.add('copied');
+                    setTimeout(() => { btn.textContent = old; btn.classList.remove('copied'); }, 2000);
+                });
+
+                weekHead.appendChild(weekTitle);
+                weekHead.appendChild(btn);
+
+                const table = document.createElement('table');
+                table.className = 'tbl';
+                const tbody = document.createElement('tbody');
+
+                let maxCols = 0;
+                w.days.forEach(d => {
+                    const times = (g.daysMap.get(fmtBRDate(d)) || []).slice();
+                    const len = times.length % 2 === 0 ? times.length : times.length + 1;
+                    maxCols = Math.max(maxCols, len);
+                });
+
+                w.days.forEach(d => {
+                    const key = fmtBRDate(d);
+                    const times = (g.daysMap.get(key) || []).slice();
+                    if (times.length % 2 !== 0) times.push("");
+                    while (times.length < maxCols) times.push("");
+
+                    const tr = document.createElement('tr');
+                    times.forEach(t => {
+                        const td = document.createElement('td');
+                        td.textContent = t || "";
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                weekBox.appendChild(weekHead);
+                weekBox.appendChild(table);
+                weeksWrap.appendChild(weekBox);
+            });
+
+            card.appendChild(weeksWrap);
+            block.appendChild(card);
+        });
+
+        container.appendChild(block);
+    }
+</script>
+
+</body>
+</html>
