@@ -195,18 +195,16 @@
 <div class="wrap">
   <section class="card">
     <div class="section">
-      <div class="grid">
-        <div>
-          <label style="margin-top:0;">Cole aqui o espelho de ponto copiado:</label>
-          <textarea id="raw" placeholder=></textarea>
-        
-          <div class="row" style="margin-top:12px;">
-            <button class="btn" id="btnProcess" type="button">Processar texto</button>
-            <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
-            <div class="loader" id="loader"></div>
-            <div class="pill" id="pillReady">Pronto!</div>
-            <div class="status" id="status"></div>
-          </div>
+      <div style="max-width:680px; margin:0 auto;">
+        <label style="margin-top:0;">Cole aqui o espelho de ponto copiado:</label>
+        <textarea id="raw" placeholder=""></textarea>
+      
+        <div class="row" style="margin-top:12px;">
+          <button class="btn" id="btnProcess" type="button">Processar texto</button>
+          <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
+          <div class="loader" id="loader"></div>
+          <div class="pill" id="pillReady">Pronto!</div>
+          <div class="status" id="status"></div>
         </div>
       </div>
     </div>
@@ -235,6 +233,9 @@ function updateMode() {
     } else {
         titleEl.textContent = 'Processador de ponto - Fertran (Sem Espera)';
         document.title = 'Processador de ponto — Fertran (Sem Espera)';
+    }
+    if ((elRaw.value||'').trim() && elOut.innerHTML.trim()) {
+        btnProcess.click();
     }
 }
 
@@ -506,19 +507,6 @@ function buildDataModelComEspera(rawText){
       }
     }
 
-    for(const refObj of byRef.values()){
-      for(const [d, arr] of refObj.days.entries()){
-        if(!arr || arr.length < 2) continue;
-        for(let i=0; i < arr.length - 1; ){
-          if(arr[i] && arr[i] === arr[i+1]){ arr.splice(i, 2); }
-          else { i++; }
-        }
-        refObj.days.set(d, arr);
-      }
-      for(const [d, arr] of refObj.days.entries()){
-        if(arr && arr.length === 2 && arr[0] === arr[1]){ refObj.days.set(d, []); }
-      }
-    }
   }
 
   const result = [];
@@ -611,14 +599,6 @@ function buildDataModelSemEspera(rawText){
       if(outHHMM) arr.push(outHHMM);
     }
 
-    for(const refObj of byRef.values()){
-      for(const [d, arr] of refObj.days.entries()){
-        refObj.days.set(d, suppressDuplicateTimesInDay(arr));
-      }
-      for(const [d, arr] of refObj.days.entries()){
-        if(arr && arr.length === 2 && arr[0] === arr[1]){ refObj.days.set(d, []); }
-      }
-    }
   }
 
   const result = [];
