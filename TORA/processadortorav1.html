@@ -1,1 +1,625 @@
-1,2,3
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Processador de Ponto — Tora (PDF)</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+<style>
+  :root{
+    --bg:#0b1220;
+    --card:#0f1a2e;
+    --muted:#8aa0c2;
+    --text:#e7eefc;
+    --line:rgba(255,255,255,.10);
+    --blue:#4aa3ff;
+    --blue2:#2b6bff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+    background: radial-gradient(1200px 800px at 20% -10%, rgba(74,163,255,.20), transparent 60%),
+                radial-gradient(900px 700px at 110% 10%, rgba(43,107,255,.16), transparent 55%),
+                var(--bg);
+    color:var(--text);
+  }
+  header{
+    max-width:1100px;
+    margin:28px auto 10px;
+    padding:0 18px;
+  }
+  .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
+  h1{margin:0; font-size:22px; letter-spacing:.2px; transition: 0.3s;}
+  
+  .mode-switch {
+      display: flex;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px;
+  }
+  .mode-switch input[type="radio"] { display: none; }
+  .mode-switch label {
+      padding: 8px 16px; margin: 0; cursor: pointer; border-radius: 6px;
+      font-size: 13px; font-weight: 600; color: var(--muted); transition: 0.2s;
+      user-select: none;
+  }
+  .mode-switch input[type="radio"]:checked + label {
+      background: rgba(74, 163, 255, 0.15);
+      color: var(--blue);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+
+  .sub{color:var(--muted);font-size:13px;line-height:1.35}
+  .wrap{max-width:1100px;margin:10px auto 48px;padding:0 18px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  }
+  .section{padding:16px 16px 14px;border-top:1px solid var(--line)}
+  .section:first-child{border-top:none}
+  label{display:block;color:var(--muted);font-size:12px;margin:10px 0 6px}
+  
+  /* Área de Upload de Ficheiro */
+  .file-drop {
+      border: 2px dashed rgba(74,163,255,.35);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      background: rgba(0,0,0,.18);
+      cursor: pointer;
+      transition: 0.2s;
+      margin-bottom: 15px;
+  }
+  .file-drop:hover {
+      border-color: rgba(74,163,255,.65);
+      background: rgba(74,163,255,.05);
+  }
+  .file-drop p { margin: 0; font-size: 14px; color: var(--text); }
+  .file-drop span { font-size: 12px; color: var(--muted); display: block; margin-top: 6px; }
+  input[type="file"] { display: none; }
+
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{
+    appearance:none;
+    border:1px solid var(--line);
+    background: rgba(74,163,255,.12);
+    color: var(--text);
+    padding:10px 12px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.15s;
+  }
+  .btn:hover{transform:translateY(-1px); border-color:rgba(74,163,255,.55)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+  .secondary{background: rgba(255,255,255,.06)}
+  .danger{background: rgba(255,80,80,.12)}
+  .status{color:var(--muted);font-size:12px;white-space:pre-wrap}
+  .loader{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.18);
+    border-top-color: var(--blue);
+    animation:spin .75s linear infinite;
+    display:none;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .pill{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(74,163,255,.35);
+    background: rgba(74,163,255,.12);
+    font-size:12px;
+    font-weight:700;
+    display:none;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:12px;
+  }
+  .out{padding:0}
+  .person{
+    border-top:1px solid var(--line);
+    padding:14px 16px;
+  }
+  .person:first-child{border-top:none}
+  .person h2{
+    margin:0 0 6px;
+    font-size:15px;
+  }
+  .ref{
+    margin-top:10px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .refhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(0,0,0,.16);
+    border-bottom:1px solid var(--line);
+  }
+  .refhead .meta{color:var(--muted);font-size:12px}
+  .weeks{padding:10px 12px}
+  .week{
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .week:last-child{margin-bottom:0}
+  .weekhead{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom:1px solid var(--line);
+  }
+  .weektitle{font-weight:800;font-size:13px}
+  .tbl{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  .tbl th,.tbl td{
+    border-bottom:1px solid rgba(255,255,255,.07);
+    padding:8px 10px;
+    vertical-align:top;
+  }
+  .tbl th{color:var(--muted);font-weight:700;text-align:left;background:rgba(0,0,0,.10)}
+  .tbl tr:last-child td{border-bottom:none}
+  .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace}
+  .month-header{
+    font-size:13px;
+    font-weight:800;
+    color:var(--blue);
+    padding:10px 12px 4px;
+    letter-spacing:.3px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-content">
+      <div>
+        <h1 id="main-title">Processador de Ponto - Tora (PDF)</h1>
+        <div class="sub" id="sub-mode">Extração automática de Entrada, Saída, Refeição e Espera por Coordenadas.</div>
+      </div>
+      <div class="mode-switch">
+        <input type="radio" name="mode" id="modeCE" value="com-espera" checked>
+        <label for="modeCE">Padrão Completo</label>
+      </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="section">
+      <div class="grid">
+        <div>
+          <label style="margin-top:0;">Selecione a Ficha de Ponto em PDF:</label>
+          <div class="file-drop" id="dropZone">
+            <p id="fileNameDisplay">Clique aqui ou arraste o ficheiro PDF</p>
+            <span>Apenas ficheiros .pdf são suportados</span>
+            <input type="file" id="fileInput" accept="application/pdf" />
+          </div>
+        
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" id="btnProcess" type="button" disabled>Processar Ficheiro</button>
+            <button class="btn secondary" id="btnClear" type="button">Limpar tudo</button>
+            <div class="loader" id="loader"></div>
+            <div class="pill" id="pillReady">Pronto!</div>
+            <div class="status" id="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section out" id="out"></div>
+  </section>
+</div>
+
+<script>
+// Configuração do Worker do PDF.js
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+const $ = (id) => document.getElementById(id);
+const fileInput = $("fileInput");
+const dropZone = $("dropZone");
+const fileNameDisplay = $("fileNameDisplay");
+const elStatus = $("status");
+const elLoader = $("loader");
+const elPillReady = $("pillReady");
+const elOut = $("out");
+const btnProcess = $("btnProcess");
+const btnClear = $("btnClear");
+
+let currentFile = null;
+
+function setStatus(msg){ elStatus.textContent = msg || ""; }
+function setLoading(on){
+  elLoader.style.display = on ? "inline-block" : "none";
+  btnProcess.disabled = on || !currentFile;
+}
+function flashReady(){
+  elPillReady.style.display = "inline-block";
+  setTimeout(()=>{ elPillReady.style.display = "none"; }, 2500);
+}
+
+// Manipulação do Ficheiro
+dropZone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", handleFileSelect);
+
+dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--blue)"; });
+dropZone.addEventListener("dragleave", (e) => { e.preventDefault(); dropZone.style.borderColor = ""; });
+dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = "";
+    if(e.dataTransfer.files.length){
+        fileInput.files = e.dataTransfer.files;
+        handleFileSelect();
+    }
+});
+
+function handleFileSelect() {
+    if(fileInput.files.length > 0) {
+        currentFile = fileInput.files[0];
+        fileNameDisplay.textContent = currentFile.name;
+        btnProcess.disabled = false;
+        setStatus("Ficheiro carregado. Clique em Processar.");
+    }
+}
+
+// ==========================================
+// MOTOR OCR DO PDF.JS (LEITURA E COORDENADAS)
+// ==========================================
+async function processarPDF(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let model = { 
+        name: "FUNCIONÁRIO NÃO IDENTIFICADO", 
+        periodStart: "??/??/????", 
+        periodEnd: "??/??/????", 
+        days: new Map() 
+    };
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        
+        let rows = [];
+        
+        // 1. Agrupar textos pela coordenada Y (Linhas da tabela) e extrair metadados
+        textContent.items.forEach(item => {
+            let text = item.str.trim();
+            if (!text) return;
+            
+            // Metadados
+            let matchFunc = text.match(/Funcionário:\s*(.+)/i);
+            if (matchFunc) model.name = matchFunc[1].trim();
+            
+            let matchPer = text.match(/Per[ií]odo:\s*(\d{2}\/\d{2}\/\d{4})\s*[aà]\s*(\d{2}\/\d{2}\/\d{4})/i);
+            if (matchPer) {
+                model.periodStart = matchPer[1];
+                model.periodEnd = matchPer[2];
+            }
+
+            // Agrupamento de Coordenadas
+            let y = Math.round(item.transform[5]); 
+            let x = Math.round(item.transform[4]);
+            
+            let row = rows.find(r => Math.abs(r.y - y) <= 4); // Tolerância de 4px na linha
+            if (!row) {
+                row = { y: y, items: [] };
+                rows.push(row);
+            }
+            row.items.push({ text: text, x: x });
+        });
+        
+        // Ordenar linhas de cima para baixo
+        rows.sort((a, b) => b.y - a.y);
+        
+        // 2. Analisar cada linha
+        rows.forEach(row => {
+            // Ordenar da esquerda para a direita
+            row.items.sort((a, b) => a.x - b.x);
+            
+            let rowText = row.items.map(i => i.text).join(' ');
+            let dateMatch = rowText.match(/^(\d{2}\/\d{2}\/\d{2,4})/);
+            
+            if (dateMatch) {
+                let dateStr = dateMatch[1];
+                
+                // Mapeamento Inteligente por Zonas Horizontais (Coordenada X)
+                let inicio = "", fim = "", refeicao = "", espera = "";
+                let timeItems = row.items.filter(it => /\d{2}:\d{2}/.test(it.text));
+                
+                // Pegar Início e Fim garantidos por estarem no começo
+                if(timeItems.length >= 2) {
+                    inicio = timeItems[0].text.match(/\d{2}:\d{2}/)[0];
+                    fim = timeItems[1].text.match(/\d{2}:\d{2}/)[0];
+                }
+
+                // Identificar Refeição e Espera através da posição X real na página
+                timeItems.forEach(it => {
+                    let t = it.text.match(/\d{2}:\d{2}/)[0];
+                    let x = it.x;
+                    
+                    // Zona 1: Refeição (Geralmente no meio, entre X: 350 e X: 520)
+                    if (x > 350 && x < 520) {
+                        if (!refeicao) refeicao = t; // Pega o primeiro desta zona
+                    }
+                    // Zona 2: Espera (Geralmente na extrema direita, entre X: 550 e X: 750)
+                    if (x > 550 && x < 750) {
+                        espera = t; // Sobrescreve até o final, garantindo pegar o "Total Espera"
+                    }
+                });
+
+                model.days.set(dateStr, [inicio, fim, refeicao, espera]);
+            }
+        });
+    }
+    
+    // Formatação de Saída
+    const refKey = model.periodEnd.substring(3);
+    return [{
+        name: model.name,
+        refs: [{
+            refKey: refKey,
+            periodStart: model.periodStart,
+            periodEnd: model.periodEnd,
+            days: model.days
+        }]
+    }];
+}
+
+// ==========================================
+// RENDERIZAÇÃO E TABELAS (Mantido da estrutura)
+// ==========================================
+function parseBRDate(dmy){
+  const m = /^(\d{2})\/(\d{2})\/(\d{2,4})$/.exec(dmy);
+  if(!m) return null;
+  const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1;
+  let yy = parseInt(m[3],10);
+  if(yy < 100) yy += 2000;
+  return new Date(yy, mm, dd);
+}
+
+function fmtBRDate(dt){
+  const dd = String(dt.getDate()).padStart(2,"0");
+  const mm = String(dt.getMonth()+1).padStart(2,"0");
+  const yy = dt.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function addDays(dt, n){
+  const d = new Date(dt.getTime());
+  d.setDate(d.getDate()+n);
+  return d;
+}
+
+function buildMonthWeeks(periodStart, periodEnd){
+  const start = parseBRDate(periodStart);
+  const end = parseBRDate(periodEnd);
+  if(!start || !end) return [];
+  const all = [];
+  for(let d = new Date(start.getTime()); d <= end; d = addDays(d,1)){
+    all.push(new Date(d.getTime()));
+  }
+  if(!all.length) return [];
+
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const monthGroups = [];
+  let curMonth = null;
+  let curWeek = null;
+  for(const d of all){
+    const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+    const isNewMonth = !curMonth || curMonth.key !== mKey;
+    const isMonday = d.getDay() === 1;
+    if(isNewMonth){
+      curWeek = { days: [] };
+      curMonth = {
+        key: mKey,
+        label: `${MESES[d.getMonth()]} ${d.getFullYear()}`,
+        weeks: [curWeek]
+      };
+      monthGroups.push(curMonth);
+    } else if(isMonday){
+      curWeek = { days: [] };
+      curMonth.weeks.push(curWeek);
+    }
+    curWeek.days.push(d);
+  }
+  return monthGroups;
+}
+
+function toTSVForWeek(weekDays, inRangeFn, dayToData, weekLabel, numCols){
+  numCols = numCols || 4;
+  const lines = [];
+  for(const d of weekDays){
+    if(!inRangeFn(d)) continue;
+    // Tenta encontrar a chave em dd/mm/aaaa ou dd/mm/aa
+    let k4 = fmtBRDate(d);
+    let k2 = k4.substring(0, 6) + k4.substring(8, 10);
+    const row = (dayToData.get(k4) || dayToData.get(k2) || ["", "", "", ""]).slice(0, numCols);
+    lines.push(row.map(v => v || "").join("\t"));
+  }
+  return lines.join("\n");
+}
+
+function escapeHtml(s){
+  return String(s||"")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#39;");
+}
+
+async function copyToClipboard(text){
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position="fixed";
+    ta.style.left="-9999px";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+}
+
+function render(model){
+  elOut.innerHTML = "";
+  if(!model.length || model[0].refs[0].days.size === 0){
+    elOut.innerHTML = `<div class="section"><div class="muted">Nenhuma batida encontrada. Verifique se o ficheiro PDF é o correto.</div></div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+
+  for(const person of model){
+    const wrap = document.createElement("div");
+    wrap.className = "person";
+    wrap.innerHTML = `<h2>${escapeHtml(person.name)}</h2>`;
+
+    for(const ref of person.refs){
+      const refBox = document.createElement("div");
+      refBox.className = "ref";
+
+      const monthWeeks = buildMonthWeeks(ref.periodStart, ref.periodEnd);
+      const start = parseBRDate(ref.periodStart);
+      const end = parseBRDate(ref.periodEnd);
+      const inRangeFn = (d)=> (start && end && d>=start && d<=end);
+
+      const refHead = document.createElement("div");
+      refHead.className = "refhead";
+      refHead.innerHTML = `
+        <div><div class="meta">Período: ${escapeHtml(ref.periodStart)} → ${escapeHtml(ref.periodEnd)}</div></div>
+        <div class="meta">Meses: ${monthWeeks.length}</div>
+      `;
+      refBox.appendChild(refHead);
+
+      const weeksWrap = document.createElement("div");
+      weeksWrap.className = "weeks";
+
+      const COLS = ['Entrada', 'Saída', 'Refeição', 'Espera'];
+      const numCols = COLS.length;
+
+      for(const monthData of monthWeeks){
+        const monthHeader = document.createElement("div");
+        monthHeader.className = "month-header";
+        monthHeader.textContent = monthData.label;
+        weeksWrap.appendChild(monthHeader);
+
+        for(const w of monthData.weeks){
+          const visDays = w.days.filter(inRangeFn);
+          if(!visDays.length) continue;
+
+          const wk = document.createElement("div");
+          wk.className = "week";
+
+          const vStart = visDays[0];
+          const vEnd = visDays[visDays.length-1];
+          const title = `${fmtBRDate(vStart)} a ${fmtBRDate(vEnd)}`;
+
+          const tsvCopy = toTSVForWeek(visDays, ()=>true, ref.days, null, numCols);
+
+          const head = document.createElement("div");
+          head.className = "weekhead";
+          head.innerHTML = `
+            <div class="weektitle">${escapeHtml(title)}</div>
+            <button class="btn secondary" type="button">Copiar semana</button>
+          `;
+          const btn = head.querySelector("button");
+          btn.addEventListener("click", async ()=>{
+            await copyToClipboard(tsvCopy);
+            const old = btn.textContent;
+            btn.textContent = "Copiado";
+            btn.disabled = true;
+            window.setTimeout(()=>{ btn.textContent = old; btn.disabled = false; }, 2500);
+          });
+
+          const table = document.createElement("table");
+          table.className = "tbl";
+          const thead = document.createElement("thead");
+          const headerRow = document.createElement("tr");
+          for(const col of COLS){
+            const th = document.createElement("th");
+            th.textContent = col;
+            headerRow.appendChild(th);
+          }
+          thead.appendChild(headerRow);
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+
+          for(const d of visDays){ 
+            let dk = fmtBRDate(d);
+            let dk2 = dk.substring(0, 6) + dk.substring(8, 10);
+            const row = (ref.days.get(dk) || ref.days.get(dk2) || ["", "", "", ""]);
+
+            const tr = document.createElement("tr");
+            for(let i = 0; i < numCols; i++){
+              const td = document.createElement("td");
+              td.className = "mono";
+              td.textContent = row[i] || "";
+              tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+          }
+          table.appendChild(tbody);
+          wk.appendChild(head);
+          wk.appendChild(table);
+          weeksWrap.appendChild(wk);
+        }
+      }
+      refBox.appendChild(weeksWrap);
+      wrap.appendChild(refBox);
+    }
+    frag.appendChild(wrap);
+  }
+  elOut.appendChild(frag);
+}
+
+btnProcess.addEventListener("click", async ()=>{
+  if(!currentFile) return;
+
+  setLoading(true);
+  elOut.innerHTML = "";
+  setStatus("A analisar coordenadas do PDF...");
+
+  try{
+    const model = await processarPDF(currentFile);
+    render(model);
+    setStatus("Processamento finalizado com sucesso.");
+    flashReady();
+  }catch(err){
+    console.error(err);
+    setStatus("Erro ao ler o ficheiro PDF. Confirme se é um PDF válido.");
+  }
+  setLoading(false);
+});
+
+btnClear.addEventListener("click", ()=>{
+  currentFile = null;
+  fileInput.value = "";
+  fileNameDisplay.textContent = "Clique aqui ou arraste o ficheiro PDF";
+  elOut.innerHTML = "";
+  btnProcess.disabled = true;
+  setStatus("");
+});
+
+</script>
+</body>
+</html>
