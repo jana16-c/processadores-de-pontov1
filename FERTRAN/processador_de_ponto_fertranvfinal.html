@@ -513,6 +513,10 @@ function buildDataModelComEspera(rawText){
   for(const [name, refsMap] of persons.entries()){
     const refs = [];
     for(const [refKey, obj] of refsMap.entries()){
+      // Ativação da função para limpar batidas coladas
+      for(const [dateKey, timesArr] of obj.days.entries()) {
+        obj.days.set(dateKey, suppressDuplicateTimesInDay(timesArr));
+      }
       refs.push(obj);
     }
     refs.sort((a,b)=>{
@@ -605,6 +609,10 @@ function buildDataModelSemEspera(rawText){
   for(const [name, refsMap] of persons.entries()){
     const refs = [];
     for(const [refKey, obj] of refsMap.entries()){
+      // Ativação da função para limpar batidas coladas
+      for(const [dateKey, timesArr] of obj.days.entries()) {
+        obj.days.set(dateKey, suppressDuplicateTimesInDay(timesArr));
+      }
       refs.push(obj);
     }
     refs.sort((a,b)=>{
