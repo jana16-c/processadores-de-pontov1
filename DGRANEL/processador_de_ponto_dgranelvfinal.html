@@ -458,13 +458,12 @@ function buildDataModelComEspera(rawText){
       if(isJornada && !isEsperaWithinJornada){
         if(inHHMM) arr.push(inHHMM);
         if(outHHMM) arr.push(outHHMM);
-      }
-
-      if(isEspera && arr.length >= 2){
-        const lastIndex = arr.length - 1;
-        const lastOut = arr[lastIndex];
-        if(lastOut === inHHMM){
-          arr[lastIndex] = outHHMM;
+      } else if(isEspera) {
+        if(arr.length >= 2 && arr[arr.length - 1] === inHHMM){
+          arr[arr.length - 1] = outHHMM;
+        } else {
+          if(inHHMM) arr.push(inHHMM);
+          if(outHHMM) arr.push(outHHMM);
         }
       }
     }
@@ -482,6 +481,11 @@ function buildDataModelComEspera(rawText){
   for(const [name, refsMap] of persons.entries()){
     const refs = [];
     for(const [refKey, obj] of refsMap.entries()){
+      // Ativação da função para limpar batidas coladas
+      for(const [dateKey, timesArr] of obj.days.entries()) {
+        obj.days.set(dateKey, suppressDuplicateTimesInDay(timesArr));
+      }
+      
       if(hasAnyPunches(obj.days)) refs.push(obj);
     }
     refs.sort((a,b)=>{
