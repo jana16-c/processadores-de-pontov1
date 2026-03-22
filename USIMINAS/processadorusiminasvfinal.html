@@ -267,8 +267,10 @@
     const ptDays = { 'dom': 0, 'seg': 1, 'ter': 2, 'qua': 3, 'qui': 4, 'sex': 5, 'sab': 6, 'sáb': 6 };
 
     function toMin(str) {
-        const [h, m] = str.split(':').map(Number);
-        return h * 60 + m;
+        if (!str) return 0;
+        const parts = str.split(':');
+        if (parts.length !== 2) return 0;
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
     }
 
     function minToTime(minutes) {
@@ -348,8 +350,10 @@
     }
 
     function add24ToTime(hhmm) {
-        const [h, m] = hhmm.split(':').map(Number);
-        return `${h + 24}:${String(m).padStart(2, '0')}`;
+        if (!hhmm) return "";
+        const parts = hhmm.split(':');
+        if (parts.length !== 2) return hhmm;
+        return `${parseInt(parts[0], 10) + 24}:${String(parts[1]).padStart(2, '0')}`;
     }
 
     function toTSVForWeek(weekDays, daysMap) {
@@ -492,59 +496,30 @@
     }
 
     function adjustShiftsV1(timeline) {
+        // Formata e processa cruzamentos de meia noite NA MESMA LINHA
         timeline.forEach(day => {
-            day.times = (day.times || []).slice().sort((a, b) => toMin(a) - toMin(b));
+            day.times = (day.times || []).slice();
+            let lastMin = -1;
+            for (let j = 0; j < day.times.length; j++) {
+                let currentMin = toMin(day.times[j]);
+                // Se o horário for menor que o anterior da mesma linha, é madrugada do dia seguinte (soma 24h)
+                if (currentMin < lastMin) {
+                    day.times[j] = add24ToTime(day.times[j]);
+                    currentMin += 24 * 60;
+                }
+                lastMin = currentMin;
+            }
         });
 
-        // PASSO 0: Separar madrugadas que formam pattern nonsense
-        // Se um dia começa com madrugada (< 12h) e tem noturna (>= 12h) depois,
-        // as madrugadas devem IR para o dia anterior
-        // TAMBÉM: Se dia tem APENAS madrugadas (sem noturnas), vai para dia anterior
-        for (let i = 1; i < timeline.length; i++) {
-            const today = timeline[i];
-            const yesterday = timeline[i - 1];
-
-            if (!isNextCalendarDay(yesterday.data, today.data)) continue;
-            if (!today.times.length) continue;
-
-            // Separa madrugadas (< 12h) e noturnas (>= 12h)
-            const morningTimes = [];  // < 12h (madrugada)
-            const nightTimes = [];    // >= 12h (noturna)
-
-            for (const t of today.times) {
-                const mins = toMin(t);
-                const hour = Math.floor(mins / 60);
-                if (hour < 12) {
-                    morningTimes.push(t);
-                } else {
-                    nightTimes.push(t);
-                }
-            }
-
-            // CASO 1: tem AMBAS (madrugadas E noturnas), as madrugadas vão para ontem
-            // CASO 2: tem APENAS madrugadas (e hoje é DSR ou sem turno), as madrugadas vão para ontem
-            if (morningTimes.length > 0 && (nightTimes.length > 0 || today.isOffDay)) {
-                // Move madrugadas para o dia anterior com +24h
-                const movedTimes = morningTimes.map(t => add24ToTime(t));
-                yesterday.times = [...(yesterday.times || []), ...movedTimes];
-                yesterday.times.sort((a, b) => toMin(a) - toMin(b));
-                
-                // Deixa apenas noturnas em hoje (ou nada, se for DSR)
-                today.times = nightTimes;
-            }
-        }
-
-        // PASSO 1: Detectar cruzamento de meia-noite e "roubar" batidas (igual ao Vale)
+        // "Roubar" batidas entre dias consecutivos (cruzamento de meia-noite entre linhas)
         for (let i = 0; i < timeline.length - 1; i++) {
             const currentDay = timeline[i];
             const nextDay = timeline[i + 1];
 
-            // Verifica se são dias consecutivos
             const diffTime = Math.abs(nextDay.data - currentDay.data);
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1 && currentDay.times.length > 0 && nextDay.times.length > 0) {
-                // Detecta se o dia atual cruzou meia-noite (horários diminuem)
                 let crossedMidnight = false;
                 let prevMins = -1;
                 for (let t of currentDay.times) {
@@ -553,13 +528,11 @@
                     prevMins = mins;
                 }
 
-                // Se cruzou meia-noite, tenta "roubar" batidas do próximo dia
                 if (crossedMidnight) {
                     while (currentDay.times.length > 0 && nextDay.times.length >= 2) {
                         const lastOut = currentDay.times[currentDay.times.length - 1];
                         const nextIn = nextDay.times[0];
 
-                        // Se a última batida de hoje = primeira de amanhã, substitui pela segunda de amanhã
                         if (lastOut === nextIn) {
                             currentDay.times[currentDay.times.length - 1] = add24ToTime(nextDay.times[1]);
                             nextDay.times.splice(0, 2);
@@ -571,7 +544,7 @@
             }
         }
 
-        // PASSO 2: Ajustar turnos abertos (ímpar de batidas) - lógica original
+        // Ajustar turnos abertos (ímpar de batidas)
         for (let i = 0; i < timeline.length - 1; i++) {
             const today = timeline[i];
             const tomorrow = timeline[i + 1];
@@ -650,7 +623,7 @@
                 monthGroups.set(monthKey, { year, month, daysMap: new Map() });
             }
             const g = monthGroups.get(monthKey);
-            g.daysMap.set(fmtBRDate(date), (item.times || []).slice().sort((a, b) => toMin(a) - toMin(b)));
+            g.daysMap.set(fmtBRDate(date), (item.times || []).slice());
         });
 
         Array.from(monthGroups.keys()).sort().forEach(monthKey => {
