@@ -35,7 +35,7 @@
 
         .container{ width:100%; max-width:1100px; margin:0 auto; }
         
-        /* Cabeçalho e Botão Seletor (Segmented Control) */
+        /* Cabeçalho e Botão Seletor */
         header{ margin-bottom:18px; }
         .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; }
         h1{ margin:0; font-size:22px; letter-spacing:.2px; transition: 0.3s; }
@@ -226,7 +226,7 @@
                     if (!timeline.length) return;
                     found = true;
                     timeline.sort((a, b) => a.data - b.data);
-                    timeline = adjustShiftsV1(timeline);
+                    timeline = adjustShifts(timeline);
                     timeline = applyMealIntervalsToTimeline(timeline, mealIntervalMin);
                     renderPersonV1(name, timeline, output);
                 });
@@ -237,7 +237,7 @@
                     if (!timeline.length) return;
                     found = true;
                     timeline.sort((a, b) => a.data - b.data);
-                    timeline = adjustShiftsV2(timeline);
+                    timeline = adjustShifts(timeline);
                     timeline = applyMealIntervalsToTimeline(timeline, mealIntervalMin);
                     renderPersonV2(name, timeline, output);
                 });
@@ -354,6 +354,81 @@
         const parts = hhmm.split(':');
         if (parts.length !== 2) return hhmm;
         return `${parseInt(parts[0], 10) + 24}:${String(parts[1]).padStart(2, '0')}`;
+    }
+
+    // LÓGICA DE AGRUPAMENTO (ROUBO DE HORÁRIOS ENTRE DIAS CONSECUTIVOS)
+    function adjustShifts(timeline) {
+        // Primeira passagem: formata a mesma linha (cruzamento de meia-noite explícito)
+        timeline.forEach(day => {
+            day.times = (day.times || []).slice();
+            let lastMin = -1;
+            for (let j = 0; j < day.times.length; j++) {
+                let currentMin = toMin(day.times[j]);
+                if (currentMin < lastMin) {
+                    day.times[j] = add24ToTime(day.times[j]);
+                    currentMin += 24 * 60;
+                }
+                lastMin = currentMin;
+            }
+        });
+
+        // Segunda passagem: união de turnos que invadem o dia seguinte (ex: jornada noturna com intervalo)
+        for (let i = 0; i < timeline.length - 1; i++) {
+            const today = timeline[i];
+            const tomorrow = timeline[i + 1];
+
+            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
+
+            let changed = true;
+            while (changed) {
+                changed = false;
+                if (!today.times.length || !tomorrow.times.length) break;
+
+                const todayOdd = today.times.length % 2 !== 0;
+                const lastToday = today.times[today.times.length - 1];
+                const firstTomorrow = tomorrow.times[0];
+
+                const lastTodayMin = toMin(lastToday);
+                let firstTomorrowMin = toMin(firstTomorrow);
+
+                let adjustedFirstTomorrowMin = firstTomorrowMin;
+                
+                // Trata a primeira batida de amanhã como +24h se for um horário menor e caracterizar a virada
+                if (adjustedFirstTomorrowMin < (lastTodayMin % 1440)) {
+                    adjustedFirstTomorrowMin += 1440;
+                }
+                
+                // Se lastTodayMin já possuir o acréscimo de +24h (ex: 29:10) e amanhã começa em 06:10
+                if (adjustedFirstTomorrowMin < lastTodayMin) {
+                    adjustedFirstTomorrowMin += 1440 * Math.ceil((lastTodayMin - adjustedFirstTomorrowMin) / 1440);
+                }
+
+                const gapHours = (adjustedFirstTomorrowMin - lastTodayMin) / 60;
+                
+                // Define se a batida de amanhã é típica da madrugada/manhã (até as 10:00 da manhã)
+                const isEarlyMorning = (adjustedFirstTomorrowMin % 1440) <= 10 * 60;
+
+                if (todayOdd) {
+                    // Hoje está ímpar (precisa de saída).
+                    // Rouba se for um horário da manhã e a distância for aceitável (até 14h para fechamento longo)
+                    if (gapHours <= 14 && isEarlyMorning) {
+                        tomorrow.times.shift();
+                        today.times.push(minToTime(adjustedFirstTomorrowMin));
+                        changed = true;
+                    }
+                } else {
+                    // Hoje está par (fechado).
+                    // Rouba se a distância para a próxima batida de amanhã for muito curta (<= 4h) 
+                    // e acontecer na madrugada/manhã (ex: volta do horário de refeição noturno).
+                    if (gapHours <= 4 && isEarlyMorning) {
+                        tomorrow.times.shift();
+                        today.times.push(minToTime(adjustedFirstTomorrowMin));
+                        changed = true;
+                    }
+                }
+            }
+        }
+        return timeline;
     }
 
     function toTSVForWeek(weekDays, daysMap) {
@@ -489,100 +564,15 @@
 
                 if (entryDate <= endDate) {
                     const isOffDay = /FOLGA|DSR|FERIADO/i.test(l);
-                    globalMap[currentName].push({ data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay });
-                }
-            }
-        }
-    }
-
-    function adjustShiftsV1(timeline) {
-        // Formata e processa cruzamentos de meia noite NA MESMA LINHA
-        timeline.forEach(day => {
-            day.times = (day.times || []).slice();
-            let lastMin = -1;
-            for (let j = 0; j < day.times.length; j++) {
-                let currentMin = toMin(day.times[j]);
-                // Se o horário for menor que o anterior da mesma linha, é madrugada do dia seguinte (soma 24h)
-                if (currentMin < lastMin) {
-                    day.times[j] = add24ToTime(day.times[j]);
-                    currentMin += 24 * 60;
-                }
-                lastMin = currentMin;
-            }
-        });
-
-        // "Roubar" batidas entre dias consecutivos (cruzamento de meia-noite entre linhas)
-        for (let i = 0; i < timeline.length - 1; i++) {
-            const currentDay = timeline[i];
-            const nextDay = timeline[i + 1];
-
-            const diffTime = Math.abs(nextDay.data - currentDay.data);
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 1 && currentDay.times.length > 0 && nextDay.times.length > 0) {
-                let crossedMidnight = false;
-                let prevMins = -1;
-                for (let t of currentDay.times) {
-                    const mins = toMin(t);
-                    if (mins < prevMins) crossedMidnight = true;
-                    prevMins = mins;
-                }
-
-                if (crossedMidnight) {
-                    while (currentDay.times.length > 0 && nextDay.times.length >= 2) {
-                        const lastOut = currentDay.times[currentDay.times.length - 1];
-                        const nextIn = nextDay.times[0];
-
-                        if (lastOut === nextIn) {
-                            currentDay.times[currentDay.times.length - 1] = add24ToTime(nextDay.times[1]);
-                            nextDay.times.splice(0, 2);
-                        } else {
-                            break;
-                        }
+                    const existingDay = globalMap[currentName].find(d => d.data.getTime() === entryDate.getTime());
+                    if (existingDay) {
+                        existingDay.times = existingDay.times.concat(realTimes);
+                    } else {
+                        globalMap[currentName].push({ data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay });
                     }
                 }
             }
         }
-
-        // Ajustar turnos abertos (ímpar de batidas)
-        for (let i = 0; i < timeline.length - 1; i++) {
-            const today = timeline[i];
-            const tomorrow = timeline[i + 1];
-
-            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
-            if (!today.times.length || !tomorrow.times.length) continue;
-
-            let changed = true;
-            while (changed) {
-                changed = false;
-                const todayOdd = today.times.length % 2 !== 0;
-                const tomorrowOdd = tomorrow.times.length % 2 !== 0;
-
-                if (!todayOdd || !tomorrow.times.length) break;
-
-                const lastToday = today.times[today.times.length - 1];
-                const firstTomorrow = tomorrow.times[0];
-
-                const lastTodayMin = toMin(lastToday);
-                const firstTomorrowMin = toMin(firstTomorrow);
-
-                if (todayOdd && tomorrowOdd) {
-                    tomorrow.times.shift();
-                    today.times.push(add24ToTime(firstTomorrow));
-                    changed = true; continue;
-                }
-
-                if (todayOdd && !tomorrowOdd) {
-                    const hoursGap = ((firstTomorrowMin + 24 * 60) - lastTodayMin) / 60;
-                    if (firstTomorrowMin < lastTodayMin || hoursGap <= 14) {
-                        tomorrow.times.shift();
-                        today.times.push(add24ToTime(firstTomorrow));
-                        changed = true; continue;
-                    }
-                }
-            }
-        }
-        return timeline;
     }
 
     function buildWeeksForMonthV1(year, monthIndex) {
@@ -680,7 +670,11 @@
                     if (times.length % 2 !== 0) times.push("");
                     while (times.length < maxCols) times.push("");
                     const tr = document.createElement('tr');
-                    times.forEach(t => { const td = document.createElement('td'); td.textContent = t || ""; tr.appendChild(td); });
+                    times.forEach(t => { 
+                        const td = document.createElement('td'); 
+                        td.textContent = t || ""; 
+                        tr.appendChild(td); 
+                    });
                     tbody.appendChild(tr);
                 });
 
@@ -790,96 +784,19 @@
                     const entryDate = new Date(trueYear, trueMonth - 1, day);
                     const isOffDay = /FOLGA|DSR|FERIADO|COMP/i.test(l);
                     
-                    map[globalName].push({
-                        data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay,
-                        periodStart: calibStartObj, periodEnd: calibEndObj
-                    });
+                    const existingDay = map[globalName].find(d => d.data.getTime() === entryDate.getTime());
+                    if (existingDay) {
+                        existingDay.times = existingDay.times.concat(realTimes);
+                    } else {
+                        map[globalName].push({
+                            data: entryDate, times: realTimes, rawLine: l, isOffDay: isOffDay,
+                            periodStart: calibStartObj, periodEnd: calibEndObj
+                        });
+                    }
                 }
             }
         }
         return map;
-    }
-
-    function adjustShiftsV2(timeline) {
-        timeline.forEach(day => {
-            day.times = (day.times || []).slice();
-            let lastMin = -1;
-            for (let j = 0; j < day.times.length; j++) {
-                let currentMin = toMin(day.times[j]);
-                if (currentMin < lastMin) {
-                    day.times[j] = add24ToTime(day.times[j]);
-                    currentMin += 24 * 60;
-                }
-                lastMin = currentMin;
-            }
-        });
-
-        // PASSO 1: "Roubar" batidas entre dias consecutivos (cruzamento de meia-noite)
-        for (let i = 0; i < timeline.length - 1; i++) {
-            const currentDay = timeline[i];
-            const nextDay = timeline[i + 1];
-
-            const diffTime = Math.abs(nextDay.data - currentDay.data);
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays === 1 && currentDay.times.length > 0 && nextDay.times.length > 0) {
-                let crossedMidnight = false;
-                let prevMins = -1;
-                for (let t of currentDay.times) {
-                    const mins = toMin(t);
-                    if (mins < prevMins) crossedMidnight = true;
-                    prevMins = mins;
-                }
-
-                if (crossedMidnight) {
-                    while (currentDay.times.length > 0 && nextDay.times.length >= 2) {
-                        const lastOut = currentDay.times[currentDay.times.length - 1];
-                        const nextIn = nextDay.times[0];
-
-                        if (lastOut === nextIn) {
-                            currentDay.times[currentDay.times.length - 1] = add24ToTime(nextDay.times[1]);
-                            nextDay.times.splice(0, 2);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // PASSO 2: Ajustar turnos abertos (ímpar de batidas)
-        for (let i = 0; i < timeline.length - 1; i++) {
-            const today = timeline[i], tomorrow = timeline[i + 1];
-            if (!isNextCalendarDay(today.data, tomorrow.data)) continue;
-            if (!today.times.length || !tomorrow.times.length) continue;
-
-            let changed = true;
-            while (changed) {
-                changed = false;
-                const todayOdd = today.times.length % 2 !== 0;
-                const tomorrowOdd = tomorrow.times.length % 2 !== 0;
-
-                if (!todayOdd || !tomorrow.times.length) break;
-
-                const lastToday = today.times[today.times.length - 1];
-                const firstTomorrow = tomorrow.times[0];
-
-                const lastTodayMin = toMin(lastToday);
-                const firstTomorrowMin = toMin(firstTomorrow);
-
-                if (todayOdd && tomorrowOdd) {
-                    tomorrow.times.shift(); today.times.push(add24ToTime(firstTomorrow)); changed = true; continue;
-                }
-
-                if (todayOdd && !tomorrowOdd) {
-                    const hoursGap = ((firstTomorrowMin + 24 * 60) - lastTodayMin) / 60;
-                    if (firstTomorrowMin < lastTodayMin || hoursGap <= 14) {
-                        tomorrow.times.shift(); today.times.push(add24ToTime(firstTomorrow)); changed = true; continue;
-                    }
-                }
-            }
-        }
-        return timeline;
     }
 
     function buildWeeksForPeriodV2(startDate, endDate) {
@@ -971,7 +888,11 @@
                     if (times.length % 2 !== 0) times.push("");
                     while (times.length < maxCols) times.push("");
                     const tr = document.createElement('tr');
-                    times.forEach(t => { const td = document.createElement('td'); td.textContent = t || ""; tr.appendChild(td); });
+                    times.forEach(t => { 
+                        const td = document.createElement('td'); 
+                        td.textContent = t || ""; 
+                        tr.appendChild(td); 
+                    });
                     tbody.appendChild(tr);
                 });
 
